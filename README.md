@@ -53,4 +53,4 @@ The program offers a seamless and intuitive way to check files for potential thr
 
 After following these steps, you should be able to right-click on a file in Windows Explorer, navigate to the context menu option you created (e.g., "Upload to VirusTotal"), and your program will be launched with the file path as an argument.
 
-**Please note:** Modifying the Windows Registry can have unintended consequences if not done correctly. Therefore, it's always a good idea to create a backup of your registry or create a system
+**Please note:** Modifying the Windows Registry can have unintended consequences if not done correctly. Therefore, it's always a good idea to create a backup of your registry or create a system resore point.
