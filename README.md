@@ -2,38 +2,54 @@
 
 RightClickVirusTotal is a Python program that provides a simple local interface for the VirusTotalAPI.
 
+Designed to be add to the Windows context menu, it allows you to easily check any files for viruses before running them.
+
+A compiled Windows executable is avaliable in the releases tab.
+
+![demo](https://github.com/smp46/RightClickVirusTotal/assets/27676057/a35113cf-60ce-4a01-a811-35f7f8c5407c)
+
+
 ## Key Features
 
 - Utilizes the VirusTotal API to upload files and retrieve analysis results.
-- Provides real-time updates on the scanning and analysis progress.
 - Displays comprehensive statistics on the file's detection status, including harmless, malicious, suspicious, and undetected classifications.
 - Built with a user-friendly graphical interface using the Tkinter library.
 
-**Note:** Before using the program, make sure to obtain a valid VirusTotal API key and enter it in the `VIRUSTOTALAPIKEY` variable within the code.
+**Note:** Before using the program, make sure to obtain a valid VirusTotal API key (these are free for basic personal use).
+
+## Current Issues
+
+- Only files that have already been analysed display results. So the workaround is to quit the program after file upload is complete, then run it again.
 
 ## Build Instructions using PyInstaller
 
 1. Make sure you have PyInstaller installed. If not, you can install it using pip by running the following command: `pip install pyinstaller`
 
-2. Open your terminal or command prompt.
+2. Install other required dependencies through pip:
+	- tk
+	- ttkthemes
+	- requests
+   - hashlib
 
-3. Navigate to the directory where `virus_total_scanner.py` is located.
+3. Open your terminal or command prompt.
 
-4. Run the following command to build the executable: `pyinstaller --onefile --noconsole virus_total_scanner.py`
+4. Navigate to the directory where `RightClickVirusTotal.py` is located.
 
-   This command instructs PyInstaller to create a single executable file (`virus_total_scanner.exe` on Windows) that contains your program and its dependencies.
+5. Run the following command to build the executable: `pyinstaller --onefile --noconsole RightClickVirusTotal.py`
 
-5. Wait for PyInstaller to finish the build process.
+   This command instructs PyInstaller to create a single executable file (`RightClickVirusTotal.exe` on Windows) that contains your program and its dependencies.
 
-6. Once the build process is complete, you will find a new `dist` directory in the same location as your program file.
+6. Wait for PyInstaller to finish the build process.
 
-7. Inside the `dist` directory, you will find the executable file (`virus_total_scanner.exe` on Windows).
+7. Once the build process is complete, you will find a new `dist` directory in the same location as your program file.
 
-## Add to Context Menu
+8. Inside the `dist` directory, you will find the executable file (`RightClickVirusTotal.exe` on Windows).
+
+## Add to Context Menu in Windows 10/11
 
 1. Open the Registry Editor by pressing Win + R, typing "regedit" in the Run dialog, and pressing Enter.
 
-2. In the Registry Editor, navigate to the following key: `HKEY_CLASSES_ROOT*\shell`
+2. In the Registry Editor, navigate to the following key: `Computer\HKEY_CLASSES_ROOT\*\shell\`
 
 3. Right-click on the "shell" key, choose New, and then Key. Give the new key a name that will represent your program (e.g., "Upload to VirusTotal").
 
@@ -41,8 +57,8 @@ RightClickVirusTotal is a Python program that provides a simple local interface 
 
 5. Select the "command" key you just created, and in the right-side pane, double-click on the `(Default)` value.
 
-6. In the Edit String dialog box, enter the path to your executable followed by "%1" (including the quotes). 
-  For example: `"C:\Path\To\Your\Program.exe" "%1"`
+6. In the Edit String dialog box, enter the path to your executable followed by your API Key in quotes and "%1" (including the quotes). 
+  For example: `"C:\Path\To\Your\Program.exe" "<APIKEY>" "%1"`
   Make sure to replace `"C:\Path\To\Your\Program.exe"` with the actual path to your executable.
 
 7. Click OK to save the value.
