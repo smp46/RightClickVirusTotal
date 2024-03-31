@@ -19,7 +19,7 @@ A compiled Windows executable is avaliable in the releases tab.
 
 ## Current Issues
 
-- Only files that have already been analysed display results. So the workaround is to quit the program after file upload is complete, then run it again.
+- None known.
 
 ## Build Instructions using PyInstaller
 
@@ -29,7 +29,6 @@ A compiled Windows executable is avaliable in the releases tab.
 	- tk
 	- ttkthemes
 	- requests
-   - hashlib
 
 3. Open your terminal or command prompt.
 
