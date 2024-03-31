@@ -1,10 +1,11 @@
-from os.path import basename, abspath, dirname, join
+from os.path import basename, abspath, dirname, getsize
 from requests import post, get
 from time import sleep
 from threading import Thread
 import sys
 import tkinter as tk
 from ttkthemes import ThemedTk
+# from ctypes import windll
 
 # Obtain the API key and file path from program arguments
 if len(sys.argv) < 3:
@@ -29,6 +30,20 @@ def check_file(file_path, text_widget):
         # Indicate that the file is being uploaded
         text_widget.insert(tk.END, '[    ] File Uploading...', 'success')
         text_widget.see(tk.END)
+        
+        # VirusTotal API requires a different request for files > 32MB
+        file_size = getsize(file_path)
+        max_size = 32 * 1024 * 1024 
+
+        if file_size > max_size:
+            # For large files, first get the upload URL
+            response = get("https://www.virustotal.com/api/v3/files/upload_url", headers=headers)
+            if response.status_code == 200:
+                globals()["url"] = response.json()['data']
+            else:
+                text_widget.insert(tk.END, f'Error fetching upload URL: {response.status_code}\n', 'error')
+                text_widget.see(tk.END)
+                return
 
         # Define the multipart-encoded data
         data = {'file': file}
@@ -38,6 +53,7 @@ def check_file(file_path, text_widget):
 
         # Delete the uploading message
         text_widget.delete('1.0', tk.END)
+        
 
         # Check if the request was successful
         if response.status_code == 200:
@@ -122,6 +138,9 @@ def create_window():
 
     # Set the size of the window
     window.geometry("300x300")
+    
+    # # Attempt to help smooth text in 
+    # windll.shcore.SetProcessDpiAwareness(1)
 
     # Set the title of the window
     window.title("VirusTotal Scanner")
