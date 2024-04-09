@@ -1,13 +1,8 @@
-##
-## Currently work in progress, TK elements are still being stripped and replaced with CLI elements.
-##
-
-from os.path import basename, abspath, dirname, getsize
+from os.path import basename, getsize
 from requests import post, get
 from time import sleep
-from threading import Thread
 import sys
-from colorama import Fore, Back, Style
+from colorama import Fore, Style
 
 # Obtain the API key and file path from program arguments
 if len(sys.argv) < 3:
