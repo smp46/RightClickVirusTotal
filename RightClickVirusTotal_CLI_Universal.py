@@ -48,7 +48,7 @@ def hash_file(file_path):
 
 def scan_file(client, file_path):
     loading_dots = 0
-    api_counter = 28
+    api_counter = 0
     
     with open(file_path, "rb") as f:
         analysis = client.scan_file(f)
