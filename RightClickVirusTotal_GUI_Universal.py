@@ -1,135 +1,62 @@
-from os.path import basename, abspath, dirname, getsize
-from requests import post, get
+from os.path import basename
 from time import sleep
 from threading import Thread
 import sys
 import tkinter as tk
+import vt
+from hashlib import md5
 from ttkthemes import ThemedTk
+import asyncio
 
-# Obtain the API key and file path from program arguments
-if len(sys.argv) < 3:
-    print("Usage: <script> <VirusTotalAPIKey> <FilePath>")
-    sys.exit()
-
-VIRUSTOTALAPIKEY = sys.argv[1].strip()
-file_path = sys.argv[2].strip()
-
-# Define the API endpoint
-url = 'https://www.virustotal.com/api/v3/files'
-
-# Define the headers for the API request
-headers = {
-    'x-apikey': VIRUSTOTALAPIKEY
-}
-
-def check_file(file_path, text_widget):
-    # Open the file in binary mode
-    with open(file_path, 'rb') as file:
-        
+def interface(print_stage, widget, file_name=None, loading_dots=None, stats=None):
+    if (print_stage == "uploading"):
         # Indicate that the file is being uploaded
-        text_widget.insert(tk.END, '[    ] File Uploading...', 'success')
-        text_widget.see(tk.END)
+        widget.insert(tk.END, '[    ] File Uploading...', 'success')
+        widget.see(tk.END)
         
-        # VirusTotal API requires a different request for files > 32MB
-        file_size = getsize(file_path)
-        max_size = 32 * 1024 * 1024 
-
-        if file_size > max_size:
-            # For large files, first get the upload URL
-            response = get("https://www.virustotal.com/api/v3/files/upload_url", headers=headers)
-            if response.status_code == 200:
-                globals()["url"] = response.json()['data']
-            else:
-                text_widget.insert(tk.END, f'Error fetching upload URL: {response.status_code}\n', 'error')
-                text_widget.see(tk.END)
-                return
-
-        # Define the multipart-encoded data
-        data = {'file': file}
-
-        # Send the file to VirusTotal for scanning
-        response = post(url, headers=headers, files=data)
-
+    elif (print_stage == "uploaded"):
         # Delete the uploading message
-        text_widget.delete('1.0', tk.END)
+        widget.delete('1.0', tk.END)
+        # Update the text widget
+        widget.insert(tk.END, '[✓] File Uploaded\n', 'success')
+        widget.see(tk.END)
         
+    elif (print_stage == "analysing"):
+        # Loading animation
+        widget.delete('1.0', tk.END)
+        widget.insert(tk.END, '[✓] File Uploaded\n', 'success')
+        widget.insert(tk.END, '[    ] File Analysing', 'success')
+        widget.insert(tk.END, '.' * loading_dots, 'success')
+        widget.see(tk.END)
 
-        # Check if the request was successful
-        if response.status_code == 200:
-            # Get the JSON response
-            json_response = response.json()
+    elif (print_stage == "analysing_please_wait"):
+        # Loading animation
+        widget.delete('1.0', tk.END)
+        widget.insert(tk.END, '[✓] File Uploaded\n', 'success')
+        widget.insert(tk.END, f'[    ] File Still Analysing' + '.' * loading_dots + '\n        don\'t worry it\'s not stuck', 'success')
+        widget.see(tk.END)
+        
+    elif (print_stage == "analysed"):
+        # Redraw as complete
+        widget.delete('1.0', tk.END)
+        widget.insert(tk.END, '[✓] File Uploaded\n', 'success')
+        widget.insert(tk.END, '[✓] Analysis Complete\n\n', 'success')
+        widget.see(tk.END)
 
-            # Get the ID of the analysis
-            analysis_id = json_response['data']['id']
-
-            # Update the text widget
-            text_widget.insert(tk.END, '[✓] File Uploaded\n', 'success')
-            text_widget.see(tk.END)
-
-            # Get the results of the analysis
-            analysis_url = f'https://www.virustotal.com/api/v3/analyses/{analysis_id}'
-            analysis_response = get(analysis_url, headers=headers)
-
-            # Update the text widget
-            text_widget.insert(tk.END, '[    ] File Analysing', 'success')
-            text_widget.see(tk.END)
-
-            # Initialize counter for loading dots
-            loading_dots = 0
-            api_counter = 0
-
-            # Poll the analysis endpoint until the analysis is complete
-            analysis_complete = False
-            while not analysis_complete:
-                sleep(1)
-
-                # Loading animation
-                text_widget.delete('1.0', tk.END)
-                text_widget.insert(tk.END, '[✓] File Uploaded\n', 'success')
-                text_widget.insert(tk.END, '[    ] File Analysing', 'success')
-                text_widget.insert(tk.END, '.' * loading_dots, 'success')
-                text_widget.see(tk.END)
-                loading_dots = (loading_dots + 1) % 4
-
-                # Perform the API request every 15 seconds
-                api_counter += 1
-                if api_counter % 15 == 0:
-                    analysis_response = get(analysis_url, headers=headers)
-                    if analysis_response.status_code == 200:
-                        analysis_status = analysis_response.json()['data']['attributes']['status']
-                        if analysis_status == 'completed':
-                            analysis_complete = True
-
-            # Redraw as complete
-            text_widget.delete('1.0', tk.END)
-            text_widget.insert(tk.END, '[✓] File Uploaded\n', 'success')
-            text_widget.insert(tk.END, '[✓] Analysis Complete\n\n', 'success')
-            text_widget.see(tk.END)
-
-            # Check if the request was successful
-            if analysis_response.status_code == 200:
-                # Get the JSON response
-                analysis_json_response = analysis_response.json()
-
-                # Get the file name
-                file_name = basename(file_path)
-
-                # Get the results of the analysis
-                stats = analysis_json_response['data']['attributes']['stats']
-
-                # Update the text widget
-                text_widget.insert(tk.END, f'File: {file_name}\n', 'file')
-                text_widget.insert(tk.END, f'Harmless: {stats["harmless"]}\n', 'harmless')
-                text_widget.insert(tk.END, f'Malicious: {stats["malicious"]}\n', 'malicious')
-                text_widget.insert(tk.END, f'Suspicious: {stats["suspicious"]}\n', 'suspicious')
-                text_widget.insert(tk.END, f'Undetected: {stats["undetected"]}\n', 'undetected')
-                text_widget.see(tk.END)
-            else:
-                text_widget.insert(tk.END, f'Error: {analysis_response.status_code}\n', 'error')
-                text_widget.see(tk.END)
-        else:
-            text_widget.insert(tk.END, f'Error: {response.status_code}\n', 'error')
-            text_widget.see(tk.END)
+        
+    elif (print_stage == "results"):
+        # Update the text widget
+        widget.insert(tk.END, f'File: {file_name}\n', 'file')
+        widget.insert(tk.END, f'Harmless: {stats["harmless"]}\n', 'harmless')
+        widget.insert(tk.END, f'Malicious: {stats["malicious"]}\n', 'malicious')
+        widget.insert(tk.END, f'Suspicious: {stats["suspicious"]}\n', 'suspicious')
+        widget.insert(tk.END, f'Undetected: {stats["undetected"]}\n', 'undetected')
+        widget.see(tk.END)
+    
+    elif (print_stage == "error"):
+        # Update the text widget
+        widget.insert(tk.END, 'An error occurred\n', 'malicious')
+        widget.see(tk.END)
 
 def create_window():
     # Create a new ThemedTk window
@@ -139,10 +66,7 @@ def create_window():
     window.geometry("300x300")
 
     # Set the title of the window
-    window.title("VirusTotal Scanner")
-
-    # Get the path to the directory where the executable is running
-    base_path = getattr(sys, '_MEIPASS', dirname(abspath(__file__)))
+    window.title("RightClickVirusTotal")
 
     # Add an exit button at the bottom of the window
     exit_button = tk.Button(window, text="Exit", command=window.destroy, padx=0, pady=10, font=("Helvetica", 12),
@@ -151,23 +75,105 @@ def create_window():
     exit_button.pack(side='bottom', fill='x', expand=True)
 
     # Create a new text widget with padding
-    text_widget = tk.Text(window, padx=10, pady=10, wrap="word", font=("Helvetica", 12))
-    text_widget.pack(fill=tk.BOTH, expand=True)
+    widget = tk.Text(window, padx=10, pady=10, wrap="word", font=("Helvetica", 12))
+    widget.pack(fill=tk.BOTH, expand=True)
     
     # Define text colors
-    text_widget.tag_configure('success', foreground='green')
-    text_widget.tag_configure('error', foreground='red')
-    text_widget.tag_configure('file', foreground='blue')
-    text_widget.tag_configure('harmless', foreground='green')
-    text_widget.tag_configure('malicious', foreground='red')
-    text_widget.tag_configure('suspicious', foreground='orange')
-    text_widget.tag_configure('undetected', foreground='grey')
+    widget.tag_configure('success', foreground='green')
+    widget.tag_configure('error', foreground='red')
+    widget.tag_configure('file', foreground='blue')
+    widget.tag_configure('harmless', foreground='green')
+    widget.tag_configure('malicious', foreground='red')
+    widget.tag_configure('suspicious', foreground='orange')
+    widget.tag_configure('undetected', foreground='grey')
 
-    # Start the file check in a new thread to avoid freezing the GUI
-    Thread(target=check_file, args=(file_path, text_widget), daemon=True).start()
-
-    # Start the Tkinter event loop
+    Thread(target=main, args=(widget,), daemon=True).start()
     window.mainloop()
 
+def hash_file(file_path):
+    # Open the file in binary mode and hash it
+    with open(file_path, 'rb') as file_to_check:
+        data = file_to_check.read() 
+        md5_hash = md5(data).hexdigest()
+    return md5_hash
+
+def scan_file(client, file_path, widget):
+    loading_dots = 0
+    api_counter = 0
+    
+    with open(file_path, "rb") as f:
+        analysis = client.scan_file(f)
+
+    # Poll the analysis endpoint until the analysis is complete
+    analysis_complete = False
+    while not analysis_complete:
+        # Loading animation
+        if api_counter <= 30:
+            interface("analysing", widget, loading_dots=loading_dots)
+        else:
+            interface("analysing_please_wait", widget, loading_dots=loading_dots)
+            
+        loading_dots = (loading_dots + 1) % 4
+
+        sleep(1)
+
+        # Perform the API request every 15 seconds
+        if api_counter % 15 == 0:
+            analysis = client.get_object("/analyses/{}", analysis.id)
+            if analysis.status == "completed":
+                analysis_complete = True
+
+        api_counter += 1
+    return
+
+
+def main(widget):
+    # Create a new event loop for the current thread
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    VIRUSTOTALAPIKEY = sys.argv[1].strip()
+    file_path = sys.argv[2].strip()
+    
+    # Get file name
+    file_name = basename(file_path)
+
+    # Update the text widget
+    interface("uploading", widget)
+    
+    # Initialise vt-api client
+    client = vt.Client(VIRUSTOTALAPIKEY)
+    md5_hash = hash_file(file_path)
+
+    # Determine if file has already been scanned
+    try:
+        file_object = client.get_object("/files/" + md5_hash)
+        interface("uploaded", widget)
+    except:
+        scan_file(client, file_path, widget)
+        try:
+            file_object = client.get_object("/files/" + md5_hash)
+            interface("uploaded", widget)
+        except:
+            interface("error", widget)
+            return
+    
+    interface("analysed", widget)
+    interface("results", widget, file_name=file_name, stats=file_object.last_analysis_stats)
+
+    # Close the client
+    client.close()
+    
+    # Close the event loop
+    loop.close()
+
+    sys.exit()          
+
 if __name__ == "__main__":
+
+    # Obtain the API key and file path from program arguments
+    if len(sys.argv) < 3:
+        print("Usage: <script> <VirusTotalAPIKey> <FilePath>")
+        sys.exit()
+
     create_window()
