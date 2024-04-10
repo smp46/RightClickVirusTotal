@@ -1,5 +1,4 @@
-from os.path import basename, getsize
-from requests import post, get
+from os.path import basename
 from time import sleep
 import sys
 from colorama import Fore, Style
