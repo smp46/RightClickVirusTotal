@@ -6,11 +6,18 @@ Designed to be add to the Windows context menu, it allows you to easily check an
 
 Now cross-platform! Checkout the latest releases for Windows and Linux specific builds.
 
-![gui_demo](https://github.com/smp46/RightClickVirusTotal/assets/27676057/a35113cf-60ce-4a01-a811-35f7f8c5407c)
+_Demo of Windows GUI_
+
+![Windows_GUI_demo](https://github.com/smp46/RightClickVirusTotal/assets/27676057/edbf8a55-4ee0-41aa-b7ea-6f36d689b224)
+
+_Demo of Universal GUI_
+
+![universal_gui_demo](https://github.com/smp46/RightClickVirusTotal/assets/27676057/a35113cf-60ce-4a01-a811-35f7f8c5407c)
+
+_Screenshot of Universal CLI_
 
 There is also now a CLI version, with builds for both Windows and Linux:
-
-![cli_demo](https://github.com/smp46/RightClickVirusTotal/assets/27676057/69610265-d554-4de0-a432-0c55511716b1)
+![universal_cli_demo](https://github.com/smp46/RightClickVirusTotal/assets/27676057/69610265-d554-4de0-a432-0c55511716b1)
 
 ## Key Features
 
@@ -28,7 +35,20 @@ There are three versions of RightClickVirusTotal, these are:
 - Universal_GUI - A Graphical User Interface version that can be used anyway a TKinter GUI can be launched, Windows, Linux or OSX. Use this if you want a GUI and you're _not_ using Windows.
 - Windows_GUI - A Graphical User Inferface version with specific features and optimisations for Windows 10/11. Use this if you want a good GUI and *Right Click* functionality on Windows.
 
-## Basic Usage Instructions
+
+## Basic Usage Instructions for Windows GUI ##
+
+Unlike the Universal Versions, Windows GUI can be run with no arguments. Opening it without arguments and admin permissions will open the program, which will then relaunch and request
+admin permissions. Then you are presented with two windows that look like this:
+![image](https://github.com/smp46/RightClickVirusTotal/assets/27676057/8c471a81-2763-4c51-b15e-a42ed865fb03)
+
+Here you can input your VirusTotal API key, and the program will add a shortcut **to the programs current location**, meaning if you move the .exe the shortcut will no longer work, so only 
+do this once you have placed it where you want to keep it, to the Windows Right Click Context Menu like shown in the demo at the top of the page. Then you can launch the program from any
+folder in file explorer by simply right clicking and selecting `Upload to VirusTotal`.
+
+The usage instructions for the Universal Versions below are also valid for the Windows GUI.
+
+## Basic Usage Instructions for Universal Versions
 
 Arguments must be provided  _to get the program to do anything_, otherwise a usage error will be printed (for the CLI) and program will exit.
 
@@ -65,29 +85,23 @@ It is also a limitation of the free API access, when a file is being analysed I 
 
 ## Build Instructions using PyInstaller
 **Made and built using Python 3.11.2**
-### Universal GUI
+### Windows GUI ###
 
-1. Make sure you have PyInstaller installed. If not, you can install it using pip by running the following command: `pip install pyinstaller`
+1. Open powershell and run `pip install pyinstaller ; pip install tk ; pip install vt-py ; pip install asyncio ; pip install pillow`
 
-2. Install other required dependencies through pip:
-	- tk
-	- ttkthemes
-	- vt-py
-	- asyncio
+4. Navigate to a directory to store the project in and run `git clone https://github.com/smp46/RightClickVirusTotal.git ; cd RightClickVirusTotal`
 
-3. Open your terminal or command prompt.
+5. Run the following command to build the executable: `pyinstaller --onefile --noconsole --icon=imgs/rcvt.ico --add-data="imgs/;imgs" .\RightClickVirusTotal_GUI_Windows.py`
 
-4. Navigate to the directory where `RightClickVirusTotal_GUI_Windows.py` is located.
-
-5. Run the following command to build the executable: `pyinstaller --onefile --noconsole RightClickVirusTotal_GUI_Windows.py`
-
-   This command instructs PyInstaller to create a single executable file (`RightClickVirusTotal_GUI_Windows.exe`) that contains your program and its dependencies.
+   This command instructs PyInstaller to create a single executable file (`RightClickVirusTotal_GUI_Windows.exe`) that contains your program, its dependencies and resources.
 
 6. Wait for PyInstaller to finish the build process.
 
 7. Once the build process is complete, you will find a new `dist` directory in the same location as your program file.
 
 8. Inside the `dist` directory, you will find the executable file (`RightClickVirusTotal_GUI_Windows.exe`).
+
+9. Move this file to anywhere you want to 'install' it.
 
 ### Universal CLI
 
