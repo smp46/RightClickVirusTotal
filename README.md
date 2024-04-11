@@ -1,4 +1,5 @@
-# RightClickVirusTotal
+# ![rcvt_icon](https://github.com/smp46/RightClickVirusTotal/assets/27676057/432f94bc-72b1-4f67-85e4-18b04ac133a7)  RightClickVirusTotal #
+
 
 RightClickVirusTotal is a Python program that provides a simple local interface for the VirusTotal API, via the vt-py library.
 
