@@ -10,6 +10,7 @@ import (
 	"crypto/md5"
 	"net/url"
 	"encoding/hex"
+	"encoding/json"
 	vt "github.com/VirusTotal/vt-go"
 )
 
@@ -92,9 +93,13 @@ func scan_file(client *vt.Client, file_path string) {
     file_scanner := client.NewFileScanner()
     analysis, err := file_scanner.ScanFile(file, nil)
     if err != nil {
+		print("96")
         log.Fatal(err)
     }
-    analysis_url, err := url.Parse(fmt.Sprintf("/analyses/%s", analysis.ID()))
+
+	analysis_url_str := "https://www.virustotal.com/api/v3/analyses/" + analysis.ID()
+
+	analysis_url, err := url.Parse(analysis_url_str)
     if err != nil {
         log.Fatal(err)
     }
@@ -145,11 +150,7 @@ func main() {
     client := vt.NewClient(VIRUSTOTALAPIKEY)
     md5_hash := hash_file(file_path)
 
-    file_url, err := url.Parse("/files/" + md5_hash)
-    if err != nil {
-        log.Fatal(err)
-    }
-
+    file_url, err := url.Parse("https://www.virustotal.com/api/v3/files/" + md5_hash)
     file_object, err := client.GetObject(file_url)
     if err == nil {
         Interface("uploaded", file_name, 0, nil)
@@ -164,26 +165,42 @@ func main() {
         Interface("uploaded", file_name, 0, nil)
     }
 
-    statsMap, err := file_object.GetContext("last_analysis_stats")
-    if err != nil {
-        log.Printf("Error getting stats: %v", err)
-        return
+	// Extract stats from the file object
+	stats_data, err := file_object.Get("last_analysis_stats")
+	if err != nil {
+		log.Printf("Error getting stats: %v", err)
+		return
+	}
+
+	// Type assert to map[string]interface{}
+	stats_map, ok := stats_data.(map[string]interface{})
+	if !ok {
+		log.Printf("Stats data is not a map: %v", stats_data)
+		return
+	}
+
+	var stats Stats
+
+    for keyStr, v := range stats_map {
+        num, ok := v.(json.Number)
+        if !ok {
+            continue
+        }
+        intVal, err := num.Int64()
+        if err != nil {
+            continue         }
+		switch keyStr {
+		case "harmless":
+			stats.Harmless = int(intVal)
+		case "malicious":
+			stats.Malicious = int(intVal)
+		case "suspicious":
+			stats.Suspicious = int(intVal)
+		case "undetected":
+			stats.Undetected = int(intVal)
+		}
     }
 
-    stats := &Stats{}
-
-    if harmless, ok := statsMap.(map[string]interface{})["harmless"].(float64); ok {
-        stats.Harmless = int(harmless)
-    }
-    if malicious, ok := statsMap.(map[string]interface{})["malicious"].(float64); ok {
-        stats.Malicious = int(malicious)
-    }
-    if suspicious, ok := statsMap.(map[string]interface{})["suspicious"].(float64); ok {
-        stats.Suspicious = int(suspicious)
-    }
-    if undetected, ok := statsMap.(map[string]interface{})["undetected"].(float64); ok {
-        stats.Undetected = int(undetected)
-    }
-
-    Interface("results", file_name, 0, stats)
+	Interface("results", file_name, 0, &stats)
 }
+
