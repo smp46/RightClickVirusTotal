@@ -127,28 +127,6 @@ It is also a limitation of the free API access, when a file is being analysed I 
 8. Inside the `dist` directory, you will find the executable file.
 
 
-### Manually Add to Context Menu in Windows 10/11
-
-_An automatic method is in development for the GUI_Windows version_
-
-1. Open the Registry Editor by pressing Win + R, typing "regedit" in the Run dialog, and pressing Enter.
-
-2. In the Registry Editor, navigate to the following key: `Computer\HKEY_CLASSES_ROOT\*\shell\`
-
-3. Right-click on the "shell" key, choose New, and then Key. Give the new key a name that will represent your program (e.g., "Upload to VirusTotal").
-
-4. With the newly created key selected, right-click on the right-side pane, choose New, and then Key. Name this key "command".
-
-5. Select the "command" key you just created, and in the right-side pane, double-click on the `(Default)` value.
-
-6. In the Edit String dialog box, enter the path to your executable followed by your API Key in quotes and "%1" (including the quotes). 
-  For example: `"C:\Path\To\Your\Program.exe" "<APIKEY>" "%1"`
-  Make sure to replace `"C:\Path\To\Your\Program.exe"` with the actual path to your executable.
-
-7. Click OK to save the value.
-
-8. Close the Registry Editor.
-
 After following these steps, you should be able to right-click on a file in Windows Explorer, navigate to the context menu option you created (e.g., "Upload to VirusTotal"), and your program will be launched with the file path as an argument.
 
 **Please note:** Modifying the Windows Registry can have unintended consequences if not done correctly. Therefore, it's always a good idea to create a backup of your registry or create a system resore point.
