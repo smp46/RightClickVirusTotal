@@ -88,43 +88,27 @@ It is also a limitation of the free API access, when a file is being analysed I 
 **Made and built using Python 3.11.2**
 ### Windows GUI ###
 
-1. Open powershell and run `pip install pyinstaller ; pip install tk ; pip install vt-py ; pip install asyncio ; pip install pillow`
+1. Open powershell and run `pip install pyinstaller tk vt-py asyncio pillow`
 
-4. Navigate to a directory to store the project in and run `git clone https://github.com/smp46/RightClickVirusTotal.git ; cd RightClickVirusTotal`
+2. Navigate to a directory to store the project in and run `git clone https://github.com/smp46/RightClickVirusTotal.git ; cd RightClickVirusTotal`
 
-5. Run the following command to build the executable: `pyinstaller --onefile --noconsole --icon=imgs/rcvt.ico --add-data="imgs/;imgs" .\RightClickVirusTotal_GUI_Windows.py`
+3. Run the following command to build the executable: `pyinstaller --onefile --noconsole --icon=imgs/rcvt.ico --add-data="imgs/;imgs" .\RightClickVirusTotal_GUI_Windows.py`
 
    This command instructs PyInstaller to create a single executable file (`RightClickVirusTotal_GUI_Windows.exe`) that contains your program, its dependencies and resources.
 
-6. Wait for PyInstaller to finish the build process.
 
-7. Once the build process is complete, you will find a new `dist` directory in the same location as your program file.
+4. Inside the `dist` directory, you will find the executable file (`RightClickVirusTotal_GUI_Windows.exe`).
 
-8. Inside the `dist` directory, you will find the executable file (`RightClickVirusTotal_GUI_Windows.exe`).
-
-9. Move this file to anywhere you want to 'install' it.
+5. Move this file to anywhere you want to 'install' it.
 
 ### Universal CLI
 
-1. Make sure you have PyInstaller installed. If not, you can install it using pip by running the following command: `pip install pyinstaller`
+1. Install required dependencies with pip `pip install pyinstaller vt-py colorama`
 
-2. Install other required dependencies through pip:
-	- vt-py
-	- colorama
+4. Navigate to a directory to store the project in and run `git clone https://github.com/smp46/RightClickVirusTotal.git ; cd RightClickVirusTotal`
 
-3. Open your terminal or command prompt.
-
-4. Navigate to the directory where `RightClickVirusTotal_CLI_Universal.py` is located.
-
-5. Run the following command to build the executable: `pyinstaller --onefile RightClickVirusTotal_CLI_Universal.py`
+3. Run the following command to build the executable: `pyinstaller --onefile RightClickVirusTotal_CLI_Universal.py`
 
    This command instructs PyInstaller to create a single executable file (`RightClickVirusTotal_CLI_Universal`) that contains your program and its dependencies.
 
-6. Wait for PyInstaller to finish the build process.
-
-7. Once the build process is complete, you will find a new `dist` directory in the same location as your program file.
-
-8. Inside the `dist` directory, you will find the executable file.
-
-
-**Please note:** Modifying the Windows Registry can have unintended consequences if not done correctly. Therefore, it's always a good idea to create a backup of your registry or create a system resore point.
+4. Inside the `dist` directory, you will find the executable file (`RightClickVirusTotal_CLI_Universal`).
