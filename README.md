@@ -127,6 +127,4 @@ It is also a limitation of the free API access, when a file is being analysed I 
 8. Inside the `dist` directory, you will find the executable file.
 
 
-After following these steps, you should be able to right-click on a file in Windows Explorer, navigate to the context menu option you created (e.g., "Upload to VirusTotal"), and your program will be launched with the file path as an argument.
-
 **Please note:** Modifying the Windows Registry can have unintended consequences if not done correctly. Therefore, it's always a good idea to create a backup of your registry or create a system resore point.
