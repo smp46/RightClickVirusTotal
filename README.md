@@ -101,6 +101,18 @@ It is also a limitation of the free API access, when a file is being analysed I 
 
 5. Move this file to anywhere you want to 'install' it.
 
+### Universal GUI ###
+
+1. nstall required dependencies with pip `pip install pyinstaller tk vt-py asyncio ttkthemes`
+
+2. Navigate to a directory to store the project in and run `git clone https://github.com/smp46/RightClickVirusTotal.git ; cd RightClickVirusTotal`
+
+3. Run the following command to build the executable: `pyinstaller --onefile --noconsole --icon=imgs/rcvt.ico .\RightClickVirusTotal_GUI_Universal.py`
+
+   This command instructs PyInstaller to create a single executable file (`RightClickVirusTotal_GUI_Universal.`) that contains your program, its dependencies and resources.
+
+4. Inside the `dist` directory, you will find the executable file (`RightClickVirusTotal_GUI_Universal`).
+
 ### Universal CLI
 
 1. Install required dependencies with pip `pip install pyinstaller vt-py colorama`
