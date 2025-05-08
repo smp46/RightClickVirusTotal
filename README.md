@@ -90,7 +90,7 @@ It is also a limitation of the free API access, when a file is being analysed I 
 
 1. Open powershell and run `pip install pyinstaller tk vt-py asyncio pillow`
 
-2. Navigate to a directory to store the project in and run `git clone https://github.com/smp46/RightClickVirusTotal.git ; cd RightClickVirusTotal`
+2. Navigate to a directory to store the project in and run `git clone https://github.com/smp46/RightClickVirusTotal.git ; cd RightClickVirusTotal/python`
 
 3. Run the following command to build the executable: `pyinstaller --onefile --noconsole --icon=imgs/rcvt.ico --add-data="imgs/;imgs" .\RightClickVirusTotal_GUI_Windows.py`
 
@@ -105,7 +105,7 @@ It is also a limitation of the free API access, when a file is being analysed I 
 
 1. nstall required dependencies with pip `pip install pyinstaller tk vt-py asyncio ttkthemes`
 
-2. Navigate to a directory to store the project in and run `git clone https://github.com/smp46/RightClickVirusTotal.git ; cd RightClickVirusTotal`
+2. Navigate to a directory to store the project in and run `git clone https://github.com/smp46/RightClickVirusTotal.git ; cd RightClickVirusTotal/python`
 
 3. Run the following command to build the executable: `pyinstaller --onefile --noconsole --icon=imgs/rcvt.ico .\RightClickVirusTotal_GUI_Universal.py`
 
@@ -117,7 +117,7 @@ It is also a limitation of the free API access, when a file is being analysed I 
 
 1. Install required dependencies with pip `pip install pyinstaller vt-py colorama`
 
-4. Navigate to a directory to store the project in and run `git clone https://github.com/smp46/RightClickVirusTotal.git ; cd RightClickVirusTotal`
+4. Navigate to a directory to store the project in and run `git clone https://github.com/smp46/RightClickVirusTotal.git ; cd RightClickVirusTotal/python`
 
 3. Run the following command to build the executable: `pyinstaller --onefile RightClickVirusTotal_CLI_Universal.py`
 
