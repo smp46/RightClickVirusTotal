@@ -15,13 +15,17 @@ build_and_checksum() {
     # Generate SHA-256 checksum
     if command -v sha256sum &>/dev/null; then
         # Linux
-        sha256sum "builds/$output" >"builds/$output.sha256"
+        checksum=$(sha256sum "builds/$output" | cut -d ' ' -f 1)
     elif command -v shasum &>/dev/null; then
         # macOS
-        shasum -a 256 "builds/$output" >"builds/$output.sha256"
+        checksum=$(shasum -a 256 "builds/$output" | cut -d ' ' -f 1)
     else
         echo "Warning: Could not generate SHA-256 checksum. Neither sha256sum nor shasum found."
+        checksum="unknown"
     fi
+
+    # Save checksum to file
+    echo "$checksum" >"builds/$output.sha256"
 
     echo "✓ Built $output"
 }
@@ -46,5 +50,7 @@ echo "Build complete! All binaries and checksums are in the builds directory."
 echo -e "\nGenerated files and their SHA-256 checksums:"
 echo "------------------------------------------------"
 for file in builds/*.sha256; do
-    cat "$file"
+    binary_name=$(basename "${file%.sha256}")
+    checksum=$(cat "$file")
+    echo "\`$checksum\`  $binary_name"
 done
