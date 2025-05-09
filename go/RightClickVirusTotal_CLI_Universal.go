@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -133,13 +134,108 @@ func scan_file(client *vt.Client, file_path string) {
 	Interface("analysed", file_name, 0, nil)
 }
 
-func main() {
-	if len(os.Args) != 3 {
-		fmt.Println("Usage: <executable> <VirusTotalAPIKey> <FilePath>")
+func createAlias() {
+	var VirusTotalAPIKey string = " "
+	for len(VirusTotalAPIKey) != 64 {
+		fmt.Print("Please enter your VirusTotal API Key: ")
+		fmt.Scanln(&VirusTotalAPIKey)
+	}
+
+	shell := ""
+	home := ""
+	if runtime.GOOS == "windows" {
+		shell = os.Getenv("ComSpec")
+		home = os.Getenv("Home")
+	} else {
+		shell = os.Getenv("SHELL")
+		home = os.Getenv("HOME")
+	}
+
+	rcvt_path, err := os.Executable()
+	if err != nil {
+		Interface("error", err.Error(), 0, nil)
+	}
+
+	rc_path := ""
+	alias := ""
+
+	switch {
+	case strings.Contains(shell, "bash"):
+		rc_path = home + "/.bashrc"
+		alias = "alias rcvt=\"" + rcvt_path + " " + VirusTotalAPIKey + "\""
+	case strings.Contains(shell, "zsh"):
+		rc_path = home + "/.zshrc"
+		alias = "alias rcvt=\"" + rcvt_path + " " + VirusTotalAPIKey + "\""
+	case strings.Contains(strings.ToLower(shell), "powershell"):
+		rc_path = home + "\\Documents\\profile.ps1"
+		alias = "New-Alias rcvt \"" + rcvt_path + " " + VirusTotalAPIKey + "\""
+	default:
+		fmt.Println("Couldn't detect the current shell.\nCannot create an alias. Bye bye.")
 		os.Exit(1)
 	}
 
-	VIRUSTOTALAPIKEY := os.Args[1]
+	var confirm string
+	fmt.Println("Appending alias to: " + rc_path)
+	fmt.Print("Procced? (Yy/Nn): ")
+	fmt.Scanln(&confirm)
+	if strings.ToLower(confirm) == "y" {
+		f, err := os.OpenFile(rc_path,
+			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			Interface("error", err.Error(), 0, nil)
+		}
+		defer f.Close()
+		if _, err := f.WriteString(alias); err != nil {
+			Interface("error", err.Error(), 0, nil)
+		}
+	} else {
+		fmt.Println("You've chosen to not append an alias.\nHere's the alias if you want to add it manually:")
+		fmt.Println(alias)
+		os.Exit(0)
+	}
+
+	fmt.Println("\nAlias added successfully!\nRestart your shell, or run `source " + rc_path + "` to use rcvt")
+
+	return
+}
+
+func displayHelp() {
+	Interface("title", "", 0, nil)
+
+	fmt.Println("\nUsage:")
+	fmt.Printf("  %s <VirusTotalAPIKey> <FilePath>%s\n", Green, Reset)
+	fmt.Println("\nArguments:")
+	fmt.Printf("  %s<VirusTotalAPIKey>%s  VirusTotal API key\n", Blue, Reset)
+	fmt.Printf("  %s<FilePath>%s          Path to the file you want to scan\n\n", Blue, Reset)
+	fmt.Println("Options:")
+	fmt.Printf("  %s--install%s           Create an alias with your API key for easier usage\n", Blue, Reset)
+	fmt.Println("\nExample:")
+	fmt.Printf("  %s%s YOUR_API_KEY file.exe%s\n", Dim, os.Args[0], Reset)
+}
+
+func main() {
+	if len(os.Args) == 2 && os.Args[1] == "--install" {
+		fmt.Println("\nWould you like to create an alias with your API key?")
+		fmt.Println("This will allow you to just type `rcvt <File>` in the future.")
+		fmt.Print("(Yy/Nn): ")
+		var confirm string
+		fmt.Scanln(&confirm)
+		if strings.ToLower(confirm) == "y" {
+			createAlias()
+		} else {
+			fmt.Println("You've chosen to not create an alias, bye bye.")
+			os.Exit(0)
+		}
+		createAlias()
+		os.Exit(0)
+	}
+
+	if len(os.Args) != 3 {
+		displayHelp()
+		return
+	}
+
+	VirusTotalAPIKey := os.Args[1]
 	file_path := os.Args[2]
 
 	file_name := filepath.Base(file_path)
@@ -147,7 +243,7 @@ func main() {
 	Interface("title", "", 0, nil)
 	Interface("uploading", file_name, 0, nil)
 
-	client := vt.NewClient(VIRUSTOTALAPIKEY)
+	client := vt.NewClient(VirusTotalAPIKey)
 	md5_hash := hash_file(file_path)
 
 	file_url, err := url.Parse("https://www.virustotal.com/api/v3/files/" + md5_hash)
