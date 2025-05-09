@@ -200,3 +200,5 @@ cython_debug/
 .pypirc
 
 venv/
+builds/
+dist/
