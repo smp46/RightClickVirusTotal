@@ -1,194 +1,187 @@
-package main 
+package main
 
 import (
-	"fmt"
-	"log"
-	"os"
-	"path/filepath"
-    "strings"
-    "time"
 	"crypto/md5"
-	"net/url"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	vt "github.com/VirusTotal/vt-go"
+	"net/url"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
 )
 
 // ANSI color codes
 const (
-    Reset      = "\033[0m"
-    Green      = "\033[32m"
-    Blue       = "\033[34m"
-    Red        = "\033[31m"
-    Yellow     = "\033[33m"
-    White      = "\033[37m"
-    Dim        = "\033[2m"
-    CursorUp   = "\033[A"
-    ClearLine  = "\033[K"
+	Reset     = "\033[0m"
+	Green     = "\033[32m"
+	Blue      = "\033[34m"
+	Red       = "\033[31m"
+	Yellow    = "\033[33m"
+	White     = "\033[37m"
+	Dim       = "\033[2m"
+	CursorUp  = "\033[A"
+	ClearLine = "\033[K"
 )
 
 type Stats struct {
-    Harmless   int
-    Malicious  int
-    Suspicious int
-    Undetected int
+	Harmless   int
+	Malicious  int
+	Suspicious int
+	Undetected int
 }
 
-func Interface(printStage string, fileName string, loadingDots int, stats *Stats) {
-    switch printStage {
-    case "title":
-        fmt.Println("  ___ _      _   _    ___ _ _    _  __   ___             _____    _        _ ")
-        fmt.Println(" | _ (_)__ _| |_| |_ / __| (_)__| |_\\ \\ / (_)_ _ _  _ __|_   ____| |_ __ _| |")
-        fmt.Println(" |   | / _` | ' |  _| (__| | / _| / /\\ V /| | '_| || (_-< | |/ _ |  _/ _` | |")
-        fmt.Println(" |_|_|_\\__, |_||_\\__|\\___|_|_\\__|_\\_\\ \\_/ |_|_|  \\_,_/__/ |_|\\___/\\__\\__,_|_|")
-        fmt.Println("       |___/                                                                 ")
+func Interface(stage string, file_name string, loading_dots int, stats *Stats) {
+	switch stage {
+	case "title":
+		fmt.Println("  ___ _      _   _    ___ _ _    _  __   ___             _____    _        _ ")
+		fmt.Println(" | _ (_)__ _| |_| |_ / __| (_)__| |_\\ \\ / (_)_ _ _  _ __|_   ____| |_ __ _| |")
+		fmt.Println(" |   | / _` | ' |  _| (__| | / _| / /\\ V /| | '_| || (_-< | |/ _ |  _/ _` | |")
+		fmt.Println(" |_|_|_\\__, |_||_\\__|\\___|_|_\\__|_\\_\\ \\_/ |_|_|  \\_,_/__/ |_|\\___/\\__\\__,_|_|")
+		fmt.Println("       |___/                                                                 ")
 
-    case "uploading":
-        fmt.Printf("\nChecking File: %s\n", fileName)
-        fmt.Printf("%s[ ] File Uploading...%s\n", Green, Reset)
+	case "uploading":
+		fmt.Printf("\nChecking File: %s\n", file_name)
+		fmt.Printf("%s[ ] File Uploading...%s\n", Green, Reset)
 
-    case "uploaded":
-        fmt.Printf("%s%s%s\n", CursorUp, strings.Repeat(" ", 30), CursorUp)
-        fmt.Printf("[✓] File Uploaded\n\n")
+	case "uploaded":
+		fmt.Printf("%s%s%s\n", CursorUp, strings.Repeat(" ", 30), CursorUp)
+		fmt.Printf("[✓] File Uploaded\n\n")
 
-    case "analysing":
-        fmt.Printf("%s%s%s\n", CursorUp, strings.Repeat(" ", 30), CursorUp)
-        fmt.Printf("[ ] File Analysing%s\n", strings.Repeat(".", loadingDots))
+	case "analysing":
+		fmt.Printf("%s%s%s\n", CursorUp, strings.Repeat(" ", 30), CursorUp)
+		fmt.Printf("[ ] File Analysing%s\n", strings.Repeat(".", loading_dots))
 
-    case "analysed":
-        fmt.Printf("%s%s%s\n", CursorUp, strings.Repeat(" ", 30), CursorUp)
-        fmt.Printf("[✓] Analysis Complete\n\n")
+	case "analysed":
+		fmt.Printf("%s%s%s\n", CursorUp, strings.Repeat(" ", 30), CursorUp)
+		fmt.Printf("[✓] Analysis Complete\n\n")
 
-    case "results":
-        fmt.Printf("%sFile: %s%s\n", Blue, fileName, Reset)
-        fmt.Printf("%sHarmless: %d%s\n", Green, stats.Harmless, Reset)
-        fmt.Printf("%sMalicious: %d%s\n", Red, stats.Malicious, Reset)
-        fmt.Printf("%sSuspicious: %d%s\n", Yellow, stats.Suspicious, Reset)
-        fmt.Printf("%s%sUndetected: %d%s\n", White, Dim, stats.Undetected, Reset)
-    }
+	case "results":
+		fmt.Printf("%sFile: %s%s\n", Blue, file_name, Reset)
+		fmt.Printf("%sHarmless: %d%s\n", Green, stats.Harmless, Reset)
+		fmt.Printf("%sMalicious: %d%s\n", Red, stats.Malicious, Reset)
+		fmt.Printf("%sSuspicious: %d%s\n", Yellow, stats.Suspicious, Reset)
+		fmt.Printf("%s%sUndetected: %d%s\n", White, Dim, stats.Undetected, Reset)
+	case "error":
+		fmt.Printf("%s[!] Error: %s%s\n", Red, file_name, Reset)
+		os.Exit(1)
+	}
 }
 
 func hash_file(file_path string) string {
-    file, err := os.ReadFile(file_path)
-    if err != nil {
-        log.Fatal(err)
-    }
-    md5_hash_byte := md5.Sum(file)
-    md5_hash := hex.EncodeToString(md5_hash_byte[:])
-    return md5_hash
+	file, err := os.ReadFile(file_path)
+	if err != nil {
+		Interface("error", err.Error(), 0, nil)
+	}
+	md5_hash_byte := md5.Sum(file)
+	md5_hash := hex.EncodeToString(md5_hash_byte[:])
+	return md5_hash
 }
 
 func scan_file(client *vt.Client, file_path string) {
-    loading_dots := 0
-    api_counter := 0
+	loading_dots := 0
+	api_counter := 0
 
-    file_name := filepath.Base(file_path)
+	file_name := filepath.Base(file_path)
 
-    file, err := os.Open(file_path)
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer file.Close()
+	file, err := os.Open(file_path)
+	if err != nil {
+		Interface("error", err.Error(), 0, nil)
+	}
+	defer file.Close()
 
-    file_scanner := client.NewFileScanner()
-    analysis, err := file_scanner.ScanFile(file, nil)
-    if err != nil {
-		print("96")
-        log.Fatal(err)
-    }
+	file_scanner := client.NewFileScanner()
+	analysis, err := file_scanner.ScanFile(file, nil)
+	if err != nil {
+		Interface("error", err.Error(), 0, nil)
+	}
 
 	analysis_url_str := "https://www.virustotal.com/api/v3/analyses/" + analysis.ID()
 
 	analysis_url, err := url.Parse(analysis_url_str)
-    if err != nil {
-        log.Fatal(err)
-    }
+	if err != nil {
+		Interface("error", err.Error(), 0, nil)
+	}
 
-    analysis_complete := false
+	analysis_complete := false
 
-    for !analysis_complete {
-        Interface("analysing", file_name, loading_dots, nil)
-        loading_dots = (loading_dots + 1) % 4
+	for !analysis_complete {
+		Interface("analysing", file_name, loading_dots, nil)
+		loading_dots = (loading_dots + 1) % 4
 
-        time.Sleep(1000 * time.Millisecond)
+		time.Sleep(1000 * time.Millisecond)
 
-        if api_counter%15 == 0 {
-            analysis, err := client.GetObject(analysis_url)
-            analysis_status, err := analysis.Get("status")
+		if api_counter%15 == 0 {
+			analysis, err := client.GetObject(analysis_url)
+			analysis_status, err := analysis.Get("status")
 			analysis_status_str := ""
-            if err != nil {
-                log.Printf("Error getting status: %v", err)
-                continue
-            } else {
+			if err != nil {
+				Interface("error", err.Error(), 0, nil)
+			} else {
 				analysis_status_str, _ = analysis_status.(string)
 			}
 
-            if analysis_status_str == "completed" {
-                analysis_complete = true
-            }
-        }
-        api_counter += 1
-    }
+			if analysis_status_str == "completed" {
+				analysis_complete = true
+			}
+		}
+		api_counter += 1
+	}
 
-    Interface("analysed", file_name, 0, nil)
+	Interface("analysed", file_name, 0, nil)
 }
 
 func main() {
-    if len(os.Args) < 3 {
-        fmt.Println("Usage: <script> <VirusTotalAPIKey> <FilePath>")
-        os.Exit(1)
-    }
-
-	VIRUSTOTALAPIKEY := os.Args[1]
-    file_path := os.Args[2]
-
-    file_name := filepath.Base(file_path)
-
-    Interface("title", "", 0, nil)
-    Interface("uploading", file_name, 0, nil)
-
-    client := vt.NewClient(VIRUSTOTALAPIKEY)
-    md5_hash := hash_file(file_path)
-
-    file_url, err := url.Parse("https://www.virustotal.com/api/v3/files/" + md5_hash)
-    file_object, err := client.GetObject(file_url)
-    if err == nil {
-        Interface("uploaded", file_name, 0, nil)
-        Interface("analysed", file_name, 0, nil)
-    } else {
-        scan_file(client, file_path)
-
-        file_object, err = client.GetObject(file_url)
-        if err != nil {
-            log.Fatal(err)
-        }
-        Interface("uploaded", file_name, 0, nil)
-    }
-
-	// Extract stats from the file object
-	stats_data, err := file_object.Get("last_analysis_stats")
-	if err != nil {
-		log.Printf("Error getting stats: %v", err)
-		return
+	if len(os.Args) != 3 {
+		fmt.Println("Usage: <executable> <VirusTotalAPIKey> <FilePath>")
+		os.Exit(1)
 	}
 
-	// Type assert to map[string]interface{}
+	VIRUSTOTALAPIKEY := os.Args[1]
+	file_path := os.Args[2]
+
+	file_name := filepath.Base(file_path)
+
+	Interface("title", "", 0, nil)
+	Interface("uploading", file_name, 0, nil)
+
+	client := vt.NewClient(VIRUSTOTALAPIKEY)
+	md5_hash := hash_file(file_path)
+
+	file_url, err := url.Parse("https://www.virustotal.com/api/v3/files/" + md5_hash)
+	file_object, err := client.GetObject(file_url)
+
+	if err == nil {
+		Interface("uploaded", file_name, 0, nil)
+		Interface("analysed", file_name, 0, nil)
+	} else {
+		scan_file(client, file_path)
+
+		file_object, err = client.GetObject(file_url)
+		if err != nil {
+			Interface("error", err.Error(), 0, nil)
+		}
+		Interface("uploaded", file_name, 0, nil)
+	}
+
+	stats_data, err := file_object.Get("last_analysis_stats")
+	if err != nil {
+		Interface("error", err.Error(), 0, nil)
+	}
+
 	stats_map, ok := stats_data.(map[string]interface{})
 	if !ok {
-		log.Printf("Stats data is not a map: %v", stats_data)
-		return
+		Interface("error", err.Error(), 0, nil)
 	}
 
 	var stats Stats
 
-    for keyStr, v := range stats_map {
-        num, ok := v.(json.Number)
-        if !ok {
-            continue
-        }
-        intVal, err := num.Int64()
-        if err != nil {
-            continue         }
+	for keyStr, v := range stats_map {
+		num, _ := v.(json.Number)
+		intVal, _ := num.Int64()
+
 		switch keyStr {
 		case "harmless":
 			stats.Harmless = int(intVal)
@@ -199,8 +192,7 @@ func main() {
 		case "undetected":
 			stats.Undetected = int(intVal)
 		}
-    }
+	}
 
 	Interface("results", file_name, 0, &stats)
 }
-
