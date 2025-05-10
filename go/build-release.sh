@@ -82,7 +82,7 @@ build_and_checksum linux amd64 RCVT_CLI_Linux_amd64
 echo "Build complete! All binaries and checksums are in the builds directory."
 
 # List all generated files with their checksums
-echo -e "\nGenerated files and their SHA-256 checksums:"
+echo -e "\n### SHA-256 CHECKSUMS"
 echo "------------------------------------------------"
 for file in builds/*.sha256; do
     binary_name=$(basename "${file%.sha256}")
