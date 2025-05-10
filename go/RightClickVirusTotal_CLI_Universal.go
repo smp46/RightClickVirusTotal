@@ -5,13 +5,15 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	vt "github.com/VirusTotal/vt-go"
 	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
+
+	vt "github.com/VirusTotal/vt-go"
+	"golang.org/x/term"
 )
 
 // ANSI color codes
@@ -34,15 +36,30 @@ type Stats struct {
 	Undetected int
 }
 
+const VERSION string = "v2.0.2"
+
 func Interface(stage string, file_name string, loading_dots int, stats *Stats) {
 	switch stage {
 	case "title":
-		fmt.Println("  ___ _      _   _    ___ _ _    _  __   ___             _____    _        _ ")
-		fmt.Println(" | _ (_)__ _| |_| |_ / __| (_)__| |_\\ \\ / (_)_ _ _  _ __|_   ____| |_ __ _| |")
-		fmt.Println(" |   | / _` | ' |  _| (__| | / _| / /\\ V /| | '_| || (_-< | |/ _ |  _/ _` | |")
-		fmt.Println(" |_|_|_\\__, |_||_\\__|\\___|_|_\\__|_\\_\\ \\_/ |_|_|  \\_,_/__/ |_|\\___/\\__\\__,_|_|")
-		fmt.Println("       |___/                                                                 ")
+		width, height, err := term.GetSize(int(os.Stdout.Fd()))
 
+		required_width := 73
+		required_height := 6
+
+		// Check if terminal has enough space
+		if err == nil && width >= required_width && height >= required_height {
+			// Terminal has enough space, print the title
+			fmt.Println("  ___ _      _   _    ___ _ _    _  __   ___             _____    _        _ ")
+			fmt.Println(" | _ (_)__ _| |_| |_ / __| (_)__| |_\\ \\ / (_)_ _ _  _ __|_   ____| |_ __ _| |")
+			fmt.Println(" |   | / _` | ' |  _| (__| | / _| / /\\ V /| | '_| || (_-< | |/ _ |  _/ _` | |")
+			fmt.Println(" |_|_|_\\__, |_||_\\__|\\___|_|_\\__|_\\_\\ \\_/ |_|_|  \\_,_/__/ |_|\\___/\\__\\__,_|_|")
+			fmt.Println("       |___/                                                                 ")
+			fmt.Println("                                                                      " + VERSION)
+		} else {
+			// Not enough space, print small title and version
+			fmt.Println("\nRightClickVirusTotal")
+			fmt.Println(VERSION)
+		}
 	case "uploading":
 		fmt.Printf("\nChecking File: %s\n", file_name)
 		fmt.Printf("%s[ ] File Uploading...%s\n", Green, Reset)
@@ -115,7 +132,7 @@ func scan_file(client *vt.Client, file_path string) {
 		time.Sleep(1000 * time.Millisecond)
 
 		if api_counter%15 == 0 {
-			analysis, err := client.GetObject(analysis_url)
+			analysis, _ := client.GetObject(analysis_url)
 			analysis_status, err := analysis.Get("status")
 			analysis_status_str := ""
 			if err != nil {
@@ -135,20 +152,18 @@ func scan_file(client *vt.Client, file_path string) {
 }
 
 func createAlias() {
-	var VirusTotalAPIKey string = " "
+	VirusTotalAPIKey := " "
 	for len(VirusTotalAPIKey) != 64 {
 		fmt.Print("Please enter your VirusTotal API Key: ")
 		fmt.Scanln(&VirusTotalAPIKey)
 	}
 
 	shell := ""
-	home := ""
+	home := os.Getenv("HOME")
 	if runtime.GOOS == "windows" {
-		shell = os.Getenv("ComSpec")
-		home = os.Getenv("Home")
+		shell = os.Getenv("powershell")
 	} else {
 		shell = os.Getenv("SHELL")
-		home = os.Getenv("HOME")
 	}
 
 	rcvt_path, err := os.Executable()
@@ -163,9 +178,17 @@ func createAlias() {
 	case strings.Contains(shell, "bash"):
 		rc_path = home + "/.bashrc"
 		alias = "alias rcvt=\"" + rcvt_path + " " + VirusTotalAPIKey + "\""
+		_, err = os.Stat(home + "/.config/bashrc/10-aliases")
+		if err == nil {
+			rc_path = home + "/.config/bashrc/10-aliases"
+		}
 	case strings.Contains(shell, "zsh"):
 		rc_path = home + "/.zshrc"
 		alias = "alias rcvt=\"" + rcvt_path + " " + VirusTotalAPIKey + "\""
+		_, err := os.Stat(home + "/.config/zshrc/25-aliases")
+		if err == nil {
+			rc_path = home + "/.config/zshrc/25-aliases"
+		}
 	case strings.Contains(strings.ToLower(shell), "powershell"):
 		rc_path = home + "\\Documents\\profile.ps1"
 		alias = "New-Alias rcvt \"" + rcvt_path + " " + VirusTotalAPIKey + "\""
@@ -188,15 +211,14 @@ func createAlias() {
 		if _, err := f.WriteString(alias); err != nil {
 			Interface("error", err.Error(), 0, nil)
 		}
+		fmt.Println("\nAlias added successfully!\nRestart your shell, or run `source " + rc_path + "` to use rcvt")
 	} else {
 		fmt.Println("You've chosen to not append an alias.\nHere's the alias if you want to add it manually:")
 		fmt.Println(alias)
-		os.Exit(0)
+
 	}
 
-	fmt.Println("\nAlias added successfully!\nRestart your shell, or run `source " + rc_path + "` to use rcvt")
-
-	return
+	os.Exit(0)
 }
 
 func displayHelp() {
@@ -246,7 +268,7 @@ func main() {
 	client := vt.NewClient(VirusTotalAPIKey)
 	md5_hash := hash_file(file_path)
 
-	file_url, err := url.Parse("https://www.virustotal.com/api/v3/files/" + md5_hash)
+	file_url, _ := url.Parse("https://www.virustotal.com/api/v3/files/" + md5_hash)
 	file_object, err := client.GetObject(file_url)
 
 	if err == nil {
@@ -267,7 +289,7 @@ func main() {
 		Interface("error", err.Error(), 0, nil)
 	}
 
-	stats_map, ok := stats_data.(map[string]interface{})
+	stats_map, ok := stats_data.(map[string]any)
 	if !ok {
 		Interface("error", err.Error(), 0, nil)
 	}
