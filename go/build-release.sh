@@ -6,8 +6,9 @@ mkdir -p builds
 # Increment version
 increment_version() {
     # Get current version from the Go file
-    VERSION_LINE=$(grep "const VERSION string = " main.go)
-    CURRENT_VERSION=$(echo $VERSION_LINE | grep -o '"v[0-9]\+\.[0-9]\+\.[0-9]\+"' | tr -d '"')
+    VERSION_FILE="RightClickVirusTotal_CLI_Universal.go"
+    VERSION_LINE=$(grep "const VERSION string = " "$VERSION_FILE")
+    CURRENT_VERSION=$(echo "$VERSION_LINE" | grep -o '"v[0-9]\+\.[0-9]\+\.[0-9]\+"' | tr -d '"')
 
     # Extract version components
     VERSION_PARTS=($(echo ${CURRENT_VERSION#v} | tr '.' ' '))
@@ -24,13 +25,13 @@ increment_version() {
     # Update version in the file
     if [[ "$OSTYPE" == "darwin"* ]]; then
         # macOS requires an empty string for -i
-        sed -i '' "s/const VERSION string = \"$CURRENT_VERSION\"/const VERSION string = \"$NEW_VERSION\"/" main.go
+        sed -i '' "s/const VERSION string = \"$CURRENT_VERSION\"/const VERSION string = \"$NEW_VERSION\"/" "$VERSION_FILE"
     else
         # Linux and others
-        sed -i "s/const VERSION string = \"$CURRENT_VERSION\"/const VERSION string = \"$NEW_VERSION\"/" main.go
+        sed -i "s/const VERSION string = \"$CURRENT_VERSION\"/const VERSION string = \"$NEW_VERSION\"/" "$VERSION_FILE"
     fi
 
-    return 0
+    echo "Version updated in $VERSION_FILE"
 }
 
 # Function to build and generate checksum
