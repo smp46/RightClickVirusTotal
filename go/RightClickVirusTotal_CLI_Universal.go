@@ -36,7 +36,7 @@ type Stats struct {
 	Undetected int
 }
 
-const VERSION string = "v2.0.2"
+const VERSION string = "v2.0.3"
 
 func Interface(stage string, file_name string, loading_dots int, stats *Stats) {
 	switch stage {
