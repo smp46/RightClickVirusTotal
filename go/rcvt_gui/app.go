@@ -2,14 +2,14 @@ package main
 
 import (
 	"context"
-	"fmt"
-
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	vt "github.com/VirusTotal/vt-go"
@@ -29,6 +29,8 @@ func NewApp() *App {
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+
+	a.start()
 }
 
 // Greet returns a greeting for the given name
@@ -43,14 +45,31 @@ type Stats struct {
 	Undetected int
 }
 
-var client *vt.Client
-var VT_API_Key string
-var file_name string
-var file_path string
-var file_hash string
-var file_object *vt.Object
-var file_url *url.URL
-var analysis_url *url.URL
+type FileInfo struct {
+	Name string
+	Size int64
+}
+
+type FunctionResult struct {
+	Success bool
+	Message string
+}
+
+type AnalysisResults struct {
+	Success bool
+	Stats   Stats
+}
+
+var (
+	client       *vt.Client
+	VT_API_Key   string
+	file_name    string
+	file_path    string
+	file_hash    string
+	file_object  *vt.Object
+	file_url     *url.URL
+	analysis_url *url.URL
+)
 
 func (a *App) start() {
 	VT_API_Key = os.Args[1]
@@ -58,22 +77,22 @@ func (a *App) start() {
 	file_name = filepath.Base(file_path)
 
 	client = vt.NewClient(VT_API_Key)
-	file_hash = a.hash_file(file_path)
+	file_hash = a.hashFile(file_path)
 
 	file_url, _ = url.Parse("https://www.virustotal.com/api/v3/files/" + file_hash)
 	file_object, _ = client.GetObject(file_url)
 }
 
-func (a *App) get_file_info() (string, int64) {
+func (a *App) GetFileInfo() FileInfo {
 	file, err := os.Stat(file_path)
 	if err != nil {
-		return "", 0
+		return FileInfo{"", 0}
 	}
 
-	return file_name, file.Size()
+	return FileInfo{file_name, file.Size()}
 }
 
-func (a *App) hash_file(file_path string) string {
+func (a *App) hashFile(file_path string) string {
 	file, err := os.ReadFile(file_path)
 	if err != nil {
 		println("Error reading file:", err)
@@ -83,30 +102,45 @@ func (a *App) hash_file(file_path string) string {
 	return md5_hash
 }
 
-func (a *App) start_file_scan() (bool, string) {
+func (a *App) StartFileScan() FunctionResult {
 	file, err := os.Open(file_path)
 	if err != nil {
-		return false, err.Error()
+		return FunctionResult{false, err.Error()}
 	}
 	defer file.Close()
 
 	file_scanner := client.NewFileScanner()
 	analysis, err := file_scanner.ScanFile(file, nil)
 	if err != nil {
-		return false, err.Error()
+		return FunctionResult{false, err.Error()}
 	}
 
 	analysis_url_str := "https://www.virustotal.com/api/v3/analyses/" + analysis.ID()
 
 	analysis_url, err = url.Parse(analysis_url_str)
 	if err != nil {
-		return false, err.Error()
+		return FunctionResult{false, err.Error()}
 	}
 
-	return true, ""
+	return FunctionResult{true, ""}
 }
 
-func (a *App) check_analysis_status() (bool, string) {
+func (a *App) CheckAnalysisStatus() FunctionResult {
+	var wg sync.WaitGroup
+	wg.Add(1)
+	result := FunctionResult{false, ""}
+
+	go func() {
+		defer wg.Done()
+		waitForAnalysisCompletion(&result)
+	}()
+
+	wg.Wait()
+
+	return result
+}
+
+func waitForAnalysisCompletion(result *FunctionResult) {
 	api_counter := 0
 	analysis_complete := false
 
@@ -118,22 +152,23 @@ func (a *App) check_analysis_status() (bool, string) {
 			analysis_status, err := analysis.Get("status")
 			analysis_status_str := ""
 			if err != nil {
-				return false, err.Error()
+				result.Success = false
+				result.Message = "Error fetching analysis status: " + err.Error()
+				break
 			} else {
 				analysis_status_str, _ = analysis_status.(string)
 			}
 
 			if analysis_status_str == "completed" {
-				analysis_complete = true
+				result.Success = true
+				break
 			}
 		}
 		api_counter += 1
 	}
-
-	return true, ""
 }
 
-func (a *App) confirm_analysis_success() bool {
+func (a *App) ConfirmAnalysisSuccess() bool {
 	var err error
 	file_object, err = client.GetObject(file_url)
 	if err != nil {
@@ -142,15 +177,15 @@ func (a *App) confirm_analysis_success() bool {
 	return true
 }
 
-func (a *App) get_analysis_results() (bool, Stats) {
+func (a *App) GetAnalysisResults() AnalysisResults {
 	stats_data, err := file_object.Get("last_analysis_stats")
 	if err != nil {
-		return false, Stats{}
+		return AnalysisResults{false, Stats{}}
 	}
 
 	stats_map, ok := stats_data.(map[string]any)
 	if !ok {
-		return false, Stats{}
+		return AnalysisResults{false, Stats{}}
 	}
 
 	var stats Stats
@@ -171,5 +206,5 @@ func (a *App) get_analysis_results() (bool, Stats) {
 		}
 	}
 
-	return true, stats
+	return AnalysisResults{true, stats}
 }
