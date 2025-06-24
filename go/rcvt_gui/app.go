@@ -72,8 +72,8 @@ var (
 )
 
 func (a *App) start() {
-	VT_API_Key = os.Args[1]
-	file_path = os.Args[2]
+	***REMOVED***
+	file_path = "/home/smp/.local/bin/rcvt"
 	file_name = filepath.Base(file_path)
 
 	client = vt.NewClient(VT_API_Key)

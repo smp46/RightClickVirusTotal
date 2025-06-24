@@ -66,7 +66,7 @@ function App() {
     <div className="App">
       <h1>RightClickVirusTotal</h1>
       
-      <h2>Status: {statusMessage}</h2>
+      <h2 class>Status: {statusMessage}</h2>
 
         {(fileInfo && fileInfo.Name != "") && (
         <div>
