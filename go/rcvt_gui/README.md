@@ -2,18 +2,10 @@
 
 ## About
 
-Wails template for Nextjs v15 with tailwindcss v4.
+This is the official Wails React-TS template.
 
 You can configure the project by editing `wails.json`. More information about the project settings can be found
 here: https://wails.io/docs/reference/project-config
-
-## New Project
-
-You can create a new wails project using:
-
-```
-wails init -n "Your Project Name" -t https://github.com/kairo913/wails-nextjs-tailwind-template
-```
 
 ## Live Development
 

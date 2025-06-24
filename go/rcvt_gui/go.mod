@@ -1,8 +1,6 @@
 module rcvt_gui
 
-go 1.22.0
-
-toolchain go1.24.4
+go 1.23
 
 require (
 	github.com/VirusTotal/vt-go v1.0.1
