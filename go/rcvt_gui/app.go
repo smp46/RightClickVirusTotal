@@ -145,7 +145,6 @@ func waitForAnalysisCompletion(result *FunctionResult) {
 	analysis_complete := false
 
 	for !analysis_complete {
-		time.Sleep(1000 * time.Millisecond)
 
 		if api_counter%15 == 0 {
 			analysis, _ := client.GetObject(analysis_url)
@@ -165,6 +164,7 @@ func waitForAnalysisCompletion(result *FunctionResult) {
 			}
 		}
 		api_counter += 1
+		time.Sleep(1000 * time.Millisecond)
 	}
 }
 

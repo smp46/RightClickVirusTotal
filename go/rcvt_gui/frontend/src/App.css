@@ -1,6 +1,11 @@
 @import "tailwindcss";
 
 #app {
-    height: 100vh;
-    text-align: center;
+  height: 100vh;
+}
+
+@theme {  
+--font-display: 
+"Work Sans",
+"sans-serif"; 
 }
