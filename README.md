@@ -58,7 +58,7 @@ You'll need to have Go, Node.js, and the Wails CLI installed.
 1.  Clone the repo
     
     ```
-    git clone [https://github.com/smp46/RightClickVirusTotal.git](https://github.com/smp46/RightClickVirusTotal.git)
+    git clone https://github.com/smp46/RightClickVirusTotal.git
     ```
  
     
