@@ -77,30 +77,41 @@ var (
 )
 
 func (a *App) start() {
-	offerShortcut = false
-	if runtime.GOOS == "linux" {
-		if UsingNautilus() {
-			if a.ShortcutExists() && os.Getenv("NAUTILUS_SCRIPT_SELECTED_FILE_PATHS") != "" {
-				VT_API_Key = os.Args[1]
-				pathsFromEnv := os.Getenv("NAUTILUS_SCRIPT_SELECTED_FILE_PATHS")
-				file_path = strings.TrimSpace(pathsFromEnv)
-			} else {
-				offerShortcut = true
-			}
+	isNautilusShortcut := runtime.GOOS == "linux" && len(os.Args) == 3 && os.Args[2] == "shortcut"
+	isWindowsFinishShortcut := runtime.GOOS == "windows" && len(os.Args) == 4 && os.Args[3] == "shortcut"
+
+	if isNautilusShortcut {
+		if !UsingNautilus() {
+			startUpError = "Shortcut error: Nautilus isn't the default file manager."
+			return
 		}
-	}
-	if len(os.Args) < 3 {
-		startUpError = "Missing arguments. Please provide VT_API_Key and file_path."
-		return
-	} else if VT_API_Key == "" || file_path == "" {
+
+		pathsFromEnv := os.Getenv("NAUTILUS_SCRIPT_SELECTED_FILE_PATHS")
+		if pathsFromEnv == "" {
+			startUpError = "Shortcut error: No file was selected in Nautilus."
+			return
+		}
+
+		VT_API_Key = os.Args[1]
+		file_path = strings.TrimSpace(pathsFromEnv)
+
+	} else if isWindowsFinishShortcut {
+		finishAddingShortcut = true
 		VT_API_Key = os.Args[1]
 		file_path = os.Args[2]
-	}
 
-	if runtime.GOOS == "windows" {
-		if len(os.Args) == 4 && os.Args[3] == "shortcut" {
-			finishAddingShortcut = true
-		} else {
+	} else {
+		if len(os.Args) < 3 {
+			startUpError = "Missing arguments. Please provide VT_API_Key and file_path."
+			return
+		}
+		VT_API_Key = os.Args[1]
+		file_path = os.Args[2]
+
+		if runtime.GOOS == "linux" && UsingNautilus() {
+			offerShortcut = true
+		}
+		if runtime.GOOS == "windows" {
 			offerShortcut = true
 		}
 	}
@@ -173,9 +184,15 @@ func (a *App) StartFileScan() FunctionResult {
 }
 
 func (a *App) CheckAnalysisStatus() FunctionResult {
+	result := FunctionResult{false, ""}
+	// See if file has already been scanned
+	if a.ConfirmAnalysisSuccess() {
+		result.Success = true
+		return result
+	}
+
 	var wg sync.WaitGroup
 	wg.Add(1)
-	result := FunctionResult{false, ""}
 
 	go func() {
 		defer wg.Done()
@@ -192,7 +209,6 @@ func waitForAnalysisCompletion(result *FunctionResult) {
 	analysis_complete := false
 
 	for !analysis_complete {
-
 		if api_counter%15 == 0 {
 			analysis, _ := client.GetObject(analysis_url)
 			analysis_status, err := analysis.Get("status")

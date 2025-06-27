@@ -17,7 +17,7 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:  "rcvt_gui",
+		Title:  "RightClickVirusTotal",
 		Width:  512,
 		Height: 768,
 		AssetServer: &assetserver.Options{
