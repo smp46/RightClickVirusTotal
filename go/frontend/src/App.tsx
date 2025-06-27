@@ -15,6 +15,7 @@ import {
   OfferShortcut,
   GetStartupError,
   FinishAddingShortcut,
+  GetVersion,
 } from "../wailsjs/go/main/App";
 import { main } from "../wailsjs/go/models";
 import { BrowserOpenURL } from "../wailsjs/runtime";
@@ -30,6 +31,7 @@ function App() {
   const [stats, setStats] = useState<main.Stats | null>(null);
   const [statusMessage, setStatusMessage] = useState("Initializing...");
   const [error, setError] = useState("");
+  const [version, setVersion] = useState("0.0.0");
 
   const [shortcutExists, setShortcutsExists] = useState(false);
   const [offerShortcut, setOfferShortcut] = useState(false);
@@ -41,6 +43,7 @@ function App() {
   useEffect(() => {
     const runAnalysis = async () => {
       try {
+        setVersion(await GetVersion());
         const isFinishingShortcut = await FinishAddingShortcut();
         setFinishAddingShortcut(isFinishingShortcut);
 
@@ -159,9 +162,10 @@ function App() {
   return (
     <div className="bg-black text-white min-h-screen flex flex-col items-center justify-center p-4 font-display">
       <div className="w-full max-w-md mx-auto z-50">
-        <h1 className="text-3xl font-bold text-center mb-8 ">
+        <h1 className="text-3xl font-bold text-center ">
           RightClickVirusTotal
         </h1>
+        <h2 className="mb-8">{version}</h2>
 
         {error && (
           <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg text-center">

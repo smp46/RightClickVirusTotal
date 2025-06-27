@@ -2,6 +2,8 @@ package main
 
 import (
 	"embed"
+	"os"
+	"rcvt/cli"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -12,6 +14,16 @@ import (
 var assets embed.FS
 
 func main() {
+	if len(os.Args) > 1 {
+		firstArg := os.Args[1]
+		if firstArg == "gui" {
+			os.Args = append(os.Args[:1], os.Args[2:]...)
+		} else {
+			cli.Run()
+			return
+		}
+	}
+
 	// Create an instance of the app structure
 	app := NewApp()
 

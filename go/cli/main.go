@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"crypto/md5"
@@ -36,7 +36,7 @@ type Stats struct {
 	Undetected int
 }
 
-const VERSION string = "v2.0.3"
+const VERSION string = "v2.0.4"
 
 func Interface(stage string, file_name string, loading_dots int, stats *Stats) {
 	switch stage {
@@ -235,7 +235,7 @@ func displayHelp() {
 	fmt.Printf("  %s%s YOUR_API_KEY file.exe%s\n", Dim, os.Args[0], Reset)
 }
 
-func main() {
+func Run() {
 	if len(os.Args) == 2 && os.Args[1] == "--install" {
 		fmt.Println("\nWould you like to create an alias with your API key?")
 		fmt.Println("This will allow you to just type `rcvt <File>` in the future.")

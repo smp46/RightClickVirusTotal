@@ -76,6 +76,8 @@ var (
 	analysis_url         *url.URL
 )
 
+const VERSION string = "v2.0.4"
+
 func (a *App) start() {
 	isNautilusShortcut := runtime.GOOS == "linux" && len(os.Args) == 3 && os.Args[2] == "shortcut"
 	isWindowsFinishShortcut := runtime.GOOS == "windows" && len(os.Args) == 4 && os.Args[3] == "shortcut"
@@ -148,6 +150,10 @@ func (a *App) GetStartupError() string {
 
 func (a *App) FinishAddingShortcut() bool {
 	return finishAddingShortcut
+}
+
+func (a *App) GetVersion() string {
+	return VERSION
 }
 
 func (a *App) hashFile(file_path string) string {

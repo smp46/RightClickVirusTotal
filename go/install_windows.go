@@ -93,10 +93,9 @@ func becomeAdmin() {
 			processedArgs = append(processedArgs, arg)
 		}
 	}
+	processedArgs = append([]string{"gui"}, processedArgs...)
 	processedArgs = append(processedArgs, "shortcut")
 	args := strings.Join(processedArgs, " ")
-
-	println("Running as admin with args:", args)
 
 	verbPtr, _ := syscall.UTF16PtrFromString(verb)
 	exePtr, _ := syscall.UTF16PtrFromString(exe)

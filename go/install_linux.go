@@ -24,7 +24,7 @@ func (a *App) AddRightClickShortcut(apiKey string) {
 		log.Fatalf("FATAL: Could not determine the path of this executable: %v", err)
 	}
 	scriptContent := fmt.Sprintf(`#!/bin/bash
-		"%s" "%s" shortcut
+		"%s" gui "%s" shortcut
 		`, executablePath, apiKey)
 	scriptFilePath := filepath.Join(nautilusScriptsDir, "Scan with VirusTotal")
 	err = os.WriteFile(scriptFilePath, []byte(scriptContent), 0755)
