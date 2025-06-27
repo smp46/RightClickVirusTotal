@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -61,19 +63,43 @@ type AnalysisResults struct {
 }
 
 var (
-	client       *vt.Client
-	VT_API_Key   string
-	file_name    string
-	file_path    string
-	file_hash    string
-	file_object  *vt.Object
-	file_url     *url.URL
-	analysis_url *url.URL
+	startUpError  string
+	offerShortcut bool
+	client        *vt.Client
+	VT_API_Key    string
+	file_name     string
+	file_path     string
+	file_hash     string
+	file_object   *vt.Object
+	file_url      *url.URL
+	analysis_url  *url.URL
 )
 
 func (a *App) start() {
-	***REMOVED***
-	file_path = "/home/smp/.local/bin/rcvt"
+	offerShortcut = false
+	if runtime.GOOS == "linux" {
+		if UsingNautilus() {
+			if a.ShortcutExists() && os.Getenv("NAUTILUS_SCRIPT_SELECTED_FILE_PATHS") != "" {
+				VT_API_Key = os.Args[1]
+				pathsFromEnv := os.Getenv("NAUTILUS_SCRIPT_SELECTED_FILE_PATHS")
+				file_path = strings.TrimSpace(pathsFromEnv)
+			} else {
+				offerShortcut = true
+			}
+		}
+	}
+	if len(os.Args) < 3 {
+		startUpError = "Missing arguments. Please provide VT_API_Key and file_path."
+		return
+	} else if VT_API_Key == "" || file_path == "" {
+		VT_API_Key = os.Args[1]
+		file_path = os.Args[2]
+	}
+
+	if runtime.GOOS == "windows" {
+		offerShortcut = true
+	}
+
 	file_name = filepath.Base(file_path)
 
 	client = vt.NewClient(VT_API_Key)
@@ -90,6 +116,18 @@ func (a *App) GetFileInfo() FileInfo {
 	}
 
 	return FileInfo{file_name, file.Size()}
+}
+
+func (a *App) GetAPIKey() string {
+	return VT_API_Key
+}
+
+func (a *App) OfferShortcut() bool {
+	return offerShortcut
+}
+
+func (a *App) GetStartupError() string {
+	return startUpError
 }
 
 func (a *App) hashFile(file_path string) string {

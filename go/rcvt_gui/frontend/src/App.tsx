@@ -9,6 +9,11 @@ import {
   CheckAnalysisStatus,
   ConfirmAnalysisSuccess,
   GetAnalysisResults,
+  AddRightClickShortcut,
+  ShortcutExists,
+  GetAPIKey,
+  OfferShortcut,
+  GetStartupError,
 } from "../wailsjs/go/main/App";
 import { main } from "../wailsjs/go/models";
 import { BrowserOpenURL } from "../wailsjs/runtime";
@@ -25,9 +30,27 @@ function App() {
   const [statusMessage, setStatusMessage] = useState("Initializing...");
   const [error, setError] = useState("");
 
+  const [shortcutExists, setShortcutsExists] = useState(false);
+  const [offerShortcut, setOfferShortcut] = useState(false);
+  const [addShortcut, setAddShortcut] = useState(false);
+  const [shortcutError, setShortcutError] = useState("");
+  const [startupError, setStartupError] = useState("");
+
   useEffect(() => {
+    const checkShortcutExists = async () => {
+      setShortcutsExists(await ShortcutExists());
+      setOfferShortcut(await OfferShortcut());
+    };
+    checkShortcutExists();
     const runAnalysis = async () => {
-      try {
+        try {
+            const startupErr = await GetStartupError();
+            if (startupErr) {
+                setError(startupErr);
+                setStatusMessage("Error");
+                return;
+            }
+
         setStatusMessage("Getting file info...");
         const info = await GetFileInfo();
         setFileInfo(info);
@@ -68,6 +91,28 @@ function App() {
 
     runAnalysis();
   }, []);
+
+  useEffect(() => {
+    const handleAddShortcut = async () => {
+      try {
+        if (!shortcutExists && addShortcut) {
+          const apiKey = await GetAPIKey();
+          if (!apiKey) {
+            throw new Error("API key is required to add the shortcut.");
+          }
+          const result = await AddRightClickShortcut(apiKey);
+          if (result == null) {
+            setShortcutsExists(true);
+          }
+        }
+      } catch (err: any) {
+        setShortcutError(
+          err.message || "An error occurred while adding the shortcut.",
+        );
+      }
+    };
+   handleAddShortcut(); 
+  }, [addShortcut]);
 
   const totalDetections = stats
     ? stats.Harmless + stats.Malicious + stats.Suspicious + stats.Undetected
@@ -171,36 +216,49 @@ function App() {
                     <span>{item.label}</span>
                     <span>{item.value}</span>
                   </div>
-                <div className="w-full z-2 rounded-full h-4">
+                  <div className="w-full z-2 rounded-full h-4">
                     <div
-                    className={`${item.color} h-full rounded-full transition-all duration-500 ease-out`}
-
-                    style={{ width: `${item.percentage}%` }}
+                      className={`${item.color} h-full rounded-full transition-all duration-500 ease-out`}
+                      style={{ width: `${item.percentage}%` }}
                     ></div>
-                </div>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         )}
       </div>
-      <footer className="flex justify-center items-center absolute bottom-0 left-0 right-0 bg-black text-white py-4 z-1 gap-1">
-        <button
-          onClick={() =>
-            BrowserOpenURL("https://github.com/smp46/RightClickVirusTotal")
-          }
-          className="flex items-center justify-center text-white transition-transform duration-300 cursor-pointer hover:scale-110"
-          aria-label="github"
-        >
-          <RiGithubLine className="text-3xl" />
-        </button>
-        <div>
-          <p
-            onClick={() => BrowserOpenURL("https://smp46.me")}
-            className="flex items-center justify-center text-white cursor-pointer "
+      <footer className="bottom-0 bg-black text-white z-1">
+        <div className="pt-4">
+          <button
+            onClick={() =>
+              BrowserOpenURL("https://github.com/smp46/RightClickVirusTotal")
+            }
+            className="text-white transition-transform duration-300 cursor-pointer hover:scale-110"
+            aria-label="github"
           >
-            @smp46
-          </p>
+            <RiGithubLine className="text-3xl" />
+          </button>
+        </div>
+        <div className="bottom-0 left-0 right-0 pb-4 text-center absolute justify-center">
+          {!shortcutExists && offerShortcut && shortcutError === "" && (
+            <button
+              onClick={() => setAddShortcut(true)}
+              className="text-white cursor-pointer "
+            >
+              Add to Right Click Menu
+            </button>
+          )}
+          {shortcutError === "" && addShortcut && shortcutExists && (
+            <p className="text-green-500">
+              Shortcut added successfully!
+            </p>
+          )}
+          {shortcutError !== "" && (
+            <p className="text-red-500">
+              Unable to add shortcut: {shortcutError}
+            </p>
+          )}
         </div>
       </footer>
     </div>
