@@ -18,7 +18,7 @@ func main() {
 	// Create application with options
 	err := wails.Run(&options.App{
 		Title:  "rcvt_gui",
-		Width:  1024,
+		Width:  512,
 		Height: 768,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
@@ -29,7 +29,6 @@ func main() {
 			app,
 		},
 	})
-
 	if err != nil {
 		println("Error:", err.Error())
 	}

@@ -63,16 +63,17 @@ type AnalysisResults struct {
 }
 
 var (
-	startUpError  string
-	offerShortcut bool
-	client        *vt.Client
-	VT_API_Key    string
-	file_name     string
-	file_path     string
-	file_hash     string
-	file_object   *vt.Object
-	file_url      *url.URL
-	analysis_url  *url.URL
+	startUpError         string
+	offerShortcut        bool
+	finishAddingShortcut bool
+	client               *vt.Client
+	VT_API_Key           string
+	file_name            string
+	file_path            string
+	file_hash            string
+	file_object          *vt.Object
+	file_url             *url.URL
+	analysis_url         *url.URL
 )
 
 func (a *App) start() {
@@ -97,7 +98,11 @@ func (a *App) start() {
 	}
 
 	if runtime.GOOS == "windows" {
-		offerShortcut = true
+		if len(os.Args) == 4 && os.Args[3] == "shortcut" {
+			finishAddingShortcut = true
+		} else {
+			offerShortcut = true
+		}
 	}
 
 	file_name = filepath.Base(file_path)
@@ -128,6 +133,10 @@ func (a *App) OfferShortcut() bool {
 
 func (a *App) GetStartupError() string {
 	return startUpError
+}
+
+func (a *App) FinishAddingShortcut() bool {
+	return finishAddingShortcut
 }
 
 func (a *App) hashFile(file_path string) string {

@@ -14,6 +14,7 @@ import {
   GetAPIKey,
   OfferShortcut,
   GetStartupError,
+  FinishAddingShortcut,
 } from "../wailsjs/go/main/App";
 import { main } from "../wailsjs/go/models";
 import { BrowserOpenURL } from "../wailsjs/runtime";
@@ -34,22 +35,29 @@ function App() {
   const [offerShortcut, setOfferShortcut] = useState(false);
   const [addShortcut, setAddShortcut] = useState(false);
   const [shortcutError, setShortcutError] = useState("");
+  const [finishAddingShortcut, setFinishAddingShortcut] = useState(false);
   const [startupError, setStartupError] = useState("");
 
   useEffect(() => {
-    const checkShortcutExists = async () => {
-      setShortcutsExists(await ShortcutExists());
-      setOfferShortcut(await OfferShortcut());
-    };
-    checkShortcutExists();
     const runAnalysis = async () => {
-        try {
-            const startupErr = await GetStartupError();
-            if (startupErr) {
-                setError(startupErr);
-                setStatusMessage("Error");
-                return;
-            }
+      try {
+        const isFinishingShortcut = await FinishAddingShortcut();
+        setFinishAddingShortcut(isFinishingShortcut);
+
+        if (isFinishingShortcut) {
+          setAddShortcut(true);
+          setOfferShortcut(false);
+        } else {
+          setOfferShortcut(await OfferShortcut());
+        }
+        setShortcutsExists(await ShortcutExists());
+
+        const startupErr = await GetStartupError();
+        if (startupErr) {
+          setError(startupErr);
+          setStatusMessage("Error");
+          return;
+        }
 
         setStatusMessage("Getting file info...");
         const info = await GetFileInfo();
@@ -94,8 +102,8 @@ function App() {
 
   useEffect(() => {
     const handleAddShortcut = async () => {
-      try {
-        if (!shortcutExists && addShortcut) {
+      if (!shortcutExists && addShortcut) {
+        try {
           const apiKey = await GetAPIKey();
           if (!apiKey) {
             throw new Error("API key is required to add the shortcut.");
@@ -104,14 +112,14 @@ function App() {
           if (result == null) {
             setShortcutsExists(true);
           }
+        } catch (err: any) {
+          setShortcutError(
+            err.message || "An error occurred while adding the shortcut.",
+          );
         }
-      } catch (err: any) {
-        setShortcutError(
-          err.message || "An error occurred while adding the shortcut.",
-        );
       }
     };
-   handleAddShortcut(); 
+    handleAddShortcut();
   }, [addShortcut]);
 
   const totalDetections = stats
@@ -250,9 +258,7 @@ function App() {
             </button>
           )}
           {shortcutError === "" && addShortcut && shortcutExists && (
-            <p className="text-green-500">
-              Shortcut added successfully!
-            </p>
+            <p className="text-green-500">Shortcut added successfully!</p>
           )}
           {shortcutError !== "" && (
             <p className="text-red-500">

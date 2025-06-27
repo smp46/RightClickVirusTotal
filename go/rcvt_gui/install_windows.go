@@ -7,6 +7,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 )
@@ -14,12 +15,13 @@ import (
 func (a *App) AddRightClickShortcut(apiKey string) error {
 	if !checkAdmin() {
 		becomeAdmin()
-		return
+		runtime.Quit(a.ctx)
+		return nil
 	}
 
-	path := getExecutablePath()
-	if path == "" {
-		return error.New("failed to get executable path")
+	executablePath := getExecutablePath()
+	if executablePath == "" {
+		return fmt.Errorf("failed to get executable path")
 	}
 	return addRegKeys(executablePath, apiKey)
 }
@@ -28,7 +30,7 @@ func (a *App) ShortcutExists() bool {
 	key, err := registry.OpenKey(
 		registry.CLASSES_ROOT,
 		`*\shell\Upload to VirusTotal`,
-		registry.KEY_READ|registry.WOW64_64KEY,
+		registry.READ|registry.WOW64_64KEY,
 	)
 	defer key.Close()
 
@@ -43,7 +45,7 @@ func addRegKeys(executablePath, apiKey string) error {
 	vtKey, _, err := registry.CreateKey(
 		registry.CLASSES_ROOT,
 		`*\shell\Upload to VirusTotal`,
-		registry.KEY_WRITE|registry.WOW64_64KEY,
+		registry.WRITE|registry.WOW64_64KEY,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create main context menu key: %w", err)
@@ -57,7 +59,7 @@ func addRegKeys(executablePath, apiKey string) error {
 	}
 
 	// Create the "command" subkey.
-	commandKey, _, err := registry.CreateKey(vtKey, "command", registry.KEY_WRITE|registry.WOW64_64KEY)
+	commandKey, _, err := registry.CreateKey(vtKey, "command", registry.WRITE|registry.WOW64_64KEY)
 	if err != nil {
 		return fmt.Errorf("failed to create command key: %w", err)
 	}
@@ -83,7 +85,18 @@ func becomeAdmin() {
 	verb := "runas"
 	exe, _ := os.Executable()
 	cwd, _ := os.Getwd()
-	args := strings.Join(os.Args[1:], " ")
+	var processedArgs []string
+	for _, arg := range os.Args[1:] {
+		if strings.Contains(arg, " ") {
+			processedArgs = append(processedArgs, fmt.Sprintf("\"%s\"", arg))
+		} else {
+			processedArgs = append(processedArgs, arg)
+		}
+	}
+	processedArgs = append(processedArgs, "shortcut")
+	args := strings.Join(processedArgs, " ")
+
+	println("Running as admin with args:", args)
 
 	verbPtr, _ := syscall.UTF16PtrFromString(verb)
 	exePtr, _ := syscall.UTF16PtrFromString(exe)
@@ -104,5 +117,13 @@ func getExecutablePath() string {
 	if err != nil {
 		return ""
 	}
-	return filepath.Abs(executable)
+	absPath, err := filepath.Abs(executable)
+	if err != nil {
+		return ""
+	}
+	return absPath
+}
+
+func UsingNautilus() bool {
+	return false // Always false on Windows
 }

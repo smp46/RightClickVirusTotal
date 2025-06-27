@@ -8,6 +8,8 @@ export function CheckAnalysisStatus():Promise<main.FunctionResult>;
 
 export function ConfirmAnalysisSuccess():Promise<boolean>;
 
+export function FinishAddingShortcut():Promise<boolean>;
+
 export function GetAPIKey():Promise<string>;
 
 export function GetAnalysisResults():Promise<main.AnalysisResults>;
