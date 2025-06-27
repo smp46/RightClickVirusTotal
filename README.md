@@ -11,6 +11,15 @@
 ![rcvt](https://github.com/user-attachments/assets/83dd6e56-8539-46a9-9fd4-e0169894b60a)
 
 
+  <h3 align="center">RightClickVirusTotal</h3>
+
+  <p align="center">
+    Quick and user-friendly file analysis with the VirusTotal API.
+    <br />
+    <a href="https://github.com/smp46/RightClickVirusTotal/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
+    &middot;
+    <a href="https://github.com/smp46/RightClickVirusTotal/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
+  </p>
 </div>
 
 ## About The Project
@@ -110,7 +119,12 @@ Don't forget to give the project a star! Thanks again!
 5.  Open a Pull Request
     
 
-### Top contributors:
+### Top contributors
+
+<a href="https://github.com/smp46/RightClickVirusTotal/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=smp46/RightClickVirusTotal" alt="contrib.rocks image" />
+</a>
+
 
 ## License
 
