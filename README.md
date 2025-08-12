@@ -81,6 +81,10 @@ After building or downloading, you can run the application from your terminal.
 ```
 ./RCVT_Linux_amd64 gui <Your_VirusTotal_API_Key> <path_to_file>
 ```
+![output](https://github.com/user-attachments/assets/61296c06-a996-4c2f-bb82-cdb03f18e6c7)
+
+
+The GUI also offers to add a "Right Click" context menu shortcut on Windows and Linux (Nautilus) for easier use.
 
 CLI:
 
@@ -90,12 +94,13 @@ The CLI executable can be run directly (the name may vary based on your OS).
 ./RCVT_Linux_amd64 <Your_VirusTotal_API_Key> <path_to_file>
 ```
 
-The GUI also offers to add a "Right Click" context menu shortcut on Windows and Linux (Nautilus) for easier use.
+![output](https://github.com/user-attachments/assets/744717cd-782c-4261-9972-69deaf6d982b)
+
 
 ## Roadmap
 
 -   [x] Cross-platform GUI and CLI
--   [ ] Ability to launch GUI with arguments, so it can be added to the content menu easier
+-   [ ] Ability to install GUI without arguments
 -   [ ] Expanded Linux Desktop Environment Support
 -   [ ] macOS support
     
