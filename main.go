@@ -14,14 +14,17 @@ import (
 var assets embed.FS
 
 func main() {
-	if len(os.Args) > 1 {
-		firstArg := os.Args[1]
-		if firstArg == "gui" {
-			os.Args = append(os.Args[:1], os.Args[2:]...)
-		} else {
-			cli.Run()
-			return
+	runCli := true
+	for i, arg := range os.Args {
+		if arg == "gui" {
+			os.Args = append(os.Args[:i], os.Args[i+1:]...)
+			runCli = false
 		}
+	}
+	if runCli {
+		cli.Run()
+		return
+
 	}
 
 	// Create an instance of the app structure
