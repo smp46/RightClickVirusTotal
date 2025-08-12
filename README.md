@@ -86,7 +86,7 @@ After building or downloading, you can run the application from your terminal.
 
 The GUI also offers to add a "Right Click" context menu shortcut on Windows and Linux (Nautilus) for easier use.
 
-CLI:
+**CLI:**
 
 The CLI executable can be run directly (the name may vary based on your OS).
 
