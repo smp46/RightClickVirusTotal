@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"sync"
 	"time"
 
 	"rcvt/internal/cmdline"
@@ -80,6 +79,9 @@ var (
 
 const VERSION string = "v2.0.4"
 
+// pollInterval is how often the analysis status loop ticks.
+var pollInterval = time.Second
+
 func (a *App) start() {
 	plan := planStartup(a.opts, startupSys{
 		GOOS:          runtime.GOOS,
@@ -100,7 +102,7 @@ func (a *App) start() {
 	client = vt.NewClient(VT_API_Key)
 	file_hash = a.hashFile(file_path)
 
-	file_url, _ = url.Parse("https://www.virustotal.com/api/v3/files/" + file_hash)
+	file_url = vt.URL("files/%s", file_hash)
 	file_object, _ = client.GetObject(file_url)
 }
 
@@ -156,12 +158,7 @@ func (a *App) StartFileScan() FunctionResult {
 		return FunctionResult{false, err.Error()}
 	}
 
-	analysis_url_str := "https://www.virustotal.com/api/v3/analyses/" + analysis.ID()
-
-	analysis_url, err = url.Parse(analysis_url_str)
-	if err != nil {
-		return FunctionResult{false, err.Error()}
-	}
+	analysis_url = vt.URL("analyses/%s", analysis.ID())
 
 	return FunctionResult{true, ""}
 }
@@ -174,43 +171,29 @@ func (a *App) CheckAnalysisStatus() FunctionResult {
 		return result
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-		waitForAnalysisCompletion(&result)
-	}()
-
-	wg.Wait()
-
+	waitForAnalysisCompletion(&result)
 	return result
 }
 
 func waitForAnalysisCompletion(result *FunctionResult) {
-	api_counter := 0
-	analysis_complete := false
-
-	for !analysis_complete {
+	for api_counter := 0; ; api_counter++ {
 		if api_counter%15 == 0 {
-			analysis, _ := client.GetObject(analysis_url)
-			analysis_status, err := analysis.Get("status")
-			analysis_status_str := ""
+			analysis, err := client.GetObject(analysis_url)
 			if err != nil {
-				result.Success = false
 				result.Message = "Error fetching analysis status: " + err.Error()
-				break
-			} else {
-				analysis_status_str, _ = analysis_status.(string)
+				return
 			}
-
-			if analysis_status_str == "completed" {
+			status, err := analysis.GetString("status")
+			if err != nil {
+				result.Message = "Error fetching analysis status: " + err.Error()
+				return
+			}
+			if status == "completed" {
 				result.Success = true
-				break
+				return
 			}
 		}
-		api_counter += 1
-		time.Sleep(1000 * time.Millisecond)
+		time.Sleep(pollInterval)
 	}
 }
 
@@ -224,6 +207,9 @@ func (a *App) ConfirmAnalysisSuccess() bool {
 }
 
 func (a *App) GetAnalysisResults() AnalysisResults {
+	if file_object == nil {
+		return AnalysisResults{false, Stats{}}
+	}
 	stats_data, err := file_object.Get("last_analysis_stats")
 	if err != nil {
 		return AnalysisResults{false, Stats{}}
