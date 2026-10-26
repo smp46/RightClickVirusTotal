@@ -2,8 +2,10 @@ package main
 
 import (
 	"embed"
+	"fmt"
 	"os"
 	"rcvt/cli"
+	"rcvt/internal/cmdline"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -14,24 +16,31 @@ import (
 var assets embed.FS
 
 func main() {
-	runCli := true
-	for i, arg := range os.Args {
-		if arg == "gui" {
-			os.Args = append(os.Args[:i], os.Args[i+1:]...)
-			runCli = false
+	opts, err := cmdline.Parse(os.Args[1:])
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error:", err)
+		fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
+		os.Exit(2)
+	}
+
+	if !opts.UseGUI(hasConsole()) {
+		os.Exit(cli.Run(opts, os.Stdin, os.Stdout))
+	}
+
+	// The GUI still reads os.Args itself, so hide the mode keywords from it.
+	var guiArgs []string
+	for _, arg := range os.Args {
+		if arg != "gui" && arg != "--gui" {
+			guiArgs = append(guiArgs, arg)
 		}
 	}
-	if runCli {
-		cli.Run()
-		return
-
-	}
+	os.Args = guiArgs
 
 	// Create an instance of the app structure
 	app := NewApp()
 
 	// Create application with options
-	err := wails.Run(&options.App{
+	err = wails.Run(&options.App{
 		Title:  "RightClickVirusTotal",
 		Width:  512,
 		Height: 768,
