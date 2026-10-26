@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,6 +38,9 @@ type Stats struct {
 }
 
 const VERSION string = "v2.0.4"
+
+// pollInterval is how often the analysis spinner ticks.
+var pollInterval = time.Second
 
 // out is where all CLI output is written, set by Run.
 var out io.Writer = os.Stdout
@@ -93,17 +95,16 @@ func Interface(stage string, file_name string, loading_dots int, stats *Stats) {
 	}
 }
 
-func hash_file(file_path string) string {
+func hash_file(file_path string) (string, error) {
 	file, err := os.ReadFile(file_path)
 	if err != nil {
-		Interface("error", err.Error(), 0, nil)
+		return "", err
 	}
 	md5_hash_byte := md5.Sum(file)
-	md5_hash := hex.EncodeToString(md5_hash_byte[:])
-	return md5_hash
+	return hex.EncodeToString(md5_hash_byte[:]), nil
 }
 
-func scan_file(client *vt.Client, file_path string) {
+func scan_file(client *vt.Client, file_path string) error {
 	loading_dots := 0
 	api_counter := 0
 
@@ -111,49 +112,42 @@ func scan_file(client *vt.Client, file_path string) {
 
 	file, err := os.Open(file_path)
 	if err != nil {
-		Interface("error", err.Error(), 0, nil)
+		return err
 	}
 	defer file.Close()
 
 	file_scanner := client.NewFileScanner()
 	analysis, err := file_scanner.ScanFile(file, nil)
 	if err != nil {
-		Interface("error", err.Error(), 0, nil)
+		return fmt.Errorf("upload failed: %w", err)
 	}
 
-	analysis_url_str := "https://www.virustotal.com/api/v3/analyses/" + analysis.ID()
+	analysis_url := vt.URL("analyses/%s", analysis.ID())
 
-	analysis_url, err := url.Parse(analysis_url_str)
-	if err != nil {
-		Interface("error", err.Error(), 0, nil)
-	}
-
-	analysis_complete := false
-
-	for !analysis_complete {
+	for {
 		Interface("analysing", file_name, loading_dots, nil)
 		loading_dots = (loading_dots + 1) % 4
 
-		time.Sleep(1000 * time.Millisecond)
+		time.Sleep(pollInterval)
 
 		if api_counter%15 == 0 {
-			analysis, _ := client.GetObject(analysis_url)
-			analysis_status, err := analysis.Get("status")
-			analysis_status_str := ""
+			analysis, err := client.GetObject(analysis_url)
 			if err != nil {
-				Interface("error", err.Error(), 0, nil)
-			} else {
-				analysis_status_str, _ = analysis_status.(string)
+				return fmt.Errorf("checking analysis status: %w", err)
 			}
-
-			if analysis_status_str == "completed" {
-				analysis_complete = true
+			status, err := analysis.GetString("status")
+			if err != nil {
+				return fmt.Errorf("checking analysis status: %w", err)
+			}
+			if status == "completed" {
+				break
 			}
 		}
 		api_counter += 1
 	}
 
 	Interface("analysed", file_name, 0, nil)
+	return nil
 }
 
 func displayHelp() {
@@ -202,7 +196,10 @@ func Run(opts cmdline.Options, in io.Reader, w io.Writer) int {
 		return 2
 	}
 
-	scan(opts.APIKey, opts.FilePath)
+	if err := scan(opts.APIKey, opts.FilePath); err != nil {
+		fmt.Fprintf(out, "%s[!] Error: %s%s\n", Red, err, Reset)
+		return 1
+	}
 	return 0
 }
 
@@ -223,42 +220,57 @@ func validateScan(opts cmdline.Options) error {
 	return nil
 }
 
-func scan(VirusTotalAPIKey, file_path string) {
+func scan(VirusTotalAPIKey, file_path string) error {
 	file_name := filepath.Base(file_path)
 
 	Interface("title", "", 0, nil)
 	Interface("uploading", file_name, 0, nil)
 
 	client := vt.NewClient(VirusTotalAPIKey)
-	md5_hash := hash_file(file_path)
+	md5_hash, err := hash_file(file_path)
+	if err != nil {
+		return err
+	}
 
-	file_url, _ := url.Parse("https://www.virustotal.com/api/v3/files/" + md5_hash)
+	file_url := vt.URL("files/%s", md5_hash)
 	file_object, err := client.GetObject(file_url)
 
 	if err == nil {
 		Interface("uploaded", file_name, 0, nil)
 		Interface("analysed", file_name, 0, nil)
 	} else {
-		scan_file(client, file_path)
+		if err := scan_file(client, file_path); err != nil {
+			return err
+		}
 
 		file_object, err = client.GetObject(file_url)
 		if err != nil {
-			Interface("error", err.Error(), 0, nil)
+			return fmt.Errorf("fetching results: %w", err)
 		}
 		Interface("uploaded", file_name, 0, nil)
 	}
 
+	stats, err := parseStats(file_object)
+	if err != nil {
+		return err
+	}
+
+	Interface("results", file_name, 0, &stats)
+	return nil
+}
+
+func parseStats(file_object *vt.Object) (Stats, error) {
+	var stats Stats
+
 	stats_data, err := file_object.Get("last_analysis_stats")
 	if err != nil {
-		Interface("error", err.Error(), 0, nil)
+		return stats, fmt.Errorf("reading results: %w", err)
 	}
 
 	stats_map, ok := stats_data.(map[string]any)
 	if !ok {
-		Interface("error", err.Error(), 0, nil)
+		return stats, fmt.Errorf("reading results: unexpected last_analysis_stats format")
 	}
-
-	var stats Stats
 
 	for keyStr, v := range stats_map {
 		num, _ := v.(json.Number)
@@ -276,5 +288,5 @@ func scan(VirusTotalAPIKey, file_path string) {
 		}
 	}
 
-	Interface("results", file_name, 0, &stats)
+	return stats, nil
 }
