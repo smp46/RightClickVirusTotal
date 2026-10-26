@@ -1,3 +1,6 @@
+> [!NOTE]
+> An LLM recently reworked this project. The original had too many quirks for me to use it day to day, and I don't have time to work on [more than one project](https://github.com/smp46/pingvin-share-x) at a time.
+
 <div align="center">
 
 [![Contributors][contributors-shield]][contributors-url]
