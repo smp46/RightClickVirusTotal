@@ -77,7 +77,7 @@ var (
 	analysis_url         *url.URL
 )
 
-const VERSION string = "v2.0.4"
+const VERSION string = "v2.1.0"
 
 // pollInterval is how often the analysis status loop ticks.
 var pollInterval = time.Second
