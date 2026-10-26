@@ -27,17 +27,8 @@ func main() {
 		os.Exit(cli.Run(opts, os.Stdin, os.Stdout))
 	}
 
-	// The GUI still reads os.Args itself, so hide the mode keywords from it.
-	var guiArgs []string
-	for _, arg := range os.Args {
-		if arg != "gui" && arg != "--gui" {
-			guiArgs = append(guiArgs, arg)
-		}
-	}
-	os.Args = guiArgs
-
 	// Create an instance of the app structure
-	app := NewApp()
+	app := NewApp(opts)
 
 	// Create application with options
 	err = wails.Run(&options.App{

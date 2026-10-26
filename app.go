@@ -10,21 +10,23 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"sync"
 	"time"
+
+	"rcvt/internal/cmdline"
 
 	vt "github.com/VirusTotal/vt-go"
 )
 
 // App struct
 type App struct {
-	ctx context.Context
+	ctx  context.Context
+	opts cmdline.Options
 }
 
 // NewApp creates a new App application struct
-func NewApp() *App {
-	return &App{}
+func NewApp(opts cmdline.Options) *App {
+	return &App{opts: opts}
 }
 
 // startup is called when the app starts. The context is saved
@@ -79,65 +81,18 @@ var (
 const VERSION string = "v2.0.4"
 
 func (a *App) start() {
-	isNautilusShortcut := runtime.GOOS == "linux" && len(os.Args) == 3 && os.Args[2] == "shortcut"
-	isWindowsFinishShortcut := runtime.GOOS == "windows" && len(os.Args) == 4 && os.Args[3] == "shortcut"
-
-	if isNautilusShortcut {
-		if !UsingNautilus() {
-			startUpError = "Shortcut error: Nautilus isn't the default file manager."
-			return
-		}
-
-		pathsFromEnv := os.Getenv("NAUTILUS_SCRIPT_SELECTED_FILE_PATHS")
-		if pathsFromEnv == "" {
-			startUpError = "Shortcut error: No file was selected in Nautilus."
-			return
-		}
-
-		VT_API_Key = os.Args[1]
-		file_path = strings.TrimSpace(pathsFromEnv)
-
-	} else if isWindowsFinishShortcut {
-		finishAddingShortcut = true
-		VT_API_Key = os.Args[1]
-		file_path = os.Args[2]
-
-	} else {
-		if runtime.GOOS == "linux" && UsingNautilus() {
-			offerShortcut = true
-		}
-		if runtime.GOOS == "windows" {
-			offerShortcut = true
-		}
-
-		if len(os.Args) >= 2 {
-			var newArgs []string
-			for _, arg := range os.Args {
-				trimmed := strings.TrimSpace(arg)
-				if len(trimmed) == 64 {
-					VT_API_Key = trimmed
-				} else {
-					newArgs = append(newArgs, arg)
-				}
-			}
-			os.Args = newArgs
-
-			if VT_API_Key == "" {
-				startUpError = "Missing API key."
-				return
-			}
-
-			if len(os.Args) == 2 {
-				file_path = os.Args[1]
-			} else {
-				startUpError = "No file path provided."
-				return
-			}
-		} else {
-			startUpError = "No arguments provided. Please provide the API key and file path."
-			return
-		}
-
+	plan := planStartup(a.opts, startupSys{
+		GOOS:          runtime.GOOS,
+		UsingNautilus: UsingNautilus,
+		Getenv:        os.Getenv,
+	})
+	VT_API_Key = plan.APIKey
+	file_path = plan.FilePath
+	offerShortcut = plan.OfferShortcut
+	finishAddingShortcut = plan.FinishShortcut
+	if plan.Error != "" {
+		startUpError = plan.Error
+		return
 	}
 
 	file_name = filepath.Base(file_path)
