@@ -37,7 +37,7 @@ type Stats struct {
 	Undetected int
 }
 
-const VERSION string = "v2.0.4"
+const VERSION string = "v2.1.0"
 
 // pollInterval is how often the analysis spinner ticks.
 var pollInterval = time.Second
