@@ -111,6 +111,6 @@ func getExecutablePath() string {
 	return absPath
 }
 
-func UsingNautilus() bool {
-	return false // Always false on Windows
+func canAddShortcut() bool {
+	return true
 }

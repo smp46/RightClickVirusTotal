@@ -84,9 +84,9 @@ var pollInterval = time.Second
 
 func (a *App) start() {
 	plan := planStartup(a.opts, startupSys{
-		GOOS:          runtime.GOOS,
-		UsingNautilus: UsingNautilus,
-		Getenv:        os.Getenv,
+		GOOS:           runtime.GOOS,
+		CanAddShortcut: canAddShortcut,
+		Getenv:         os.Getenv,
 	})
 	VT_API_Key = plan.APIKey
 	file_path = plan.FilePath

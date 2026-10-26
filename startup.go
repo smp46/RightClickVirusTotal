@@ -18,9 +18,10 @@ type startupPlan struct {
 }
 
 type startupSys struct {
-	GOOS          string
-	UsingNautilus func() bool
-	Getenv        func(string) string
+	GOOS string
+	// CanAddShortcut reports whether a right click menu can be installed.
+	CanAddShortcut func() bool
+	Getenv         func(string) string
 }
 
 func planStartup(opts cmdline.Options, sys startupSys) startupPlan {
@@ -44,7 +45,7 @@ func planStartup(opts cmdline.Options, sys startupSys) startupPlan {
 		// Relaunched elevated to finish adding the context menu entry.
 		plan.FinishShortcut = true
 	default:
-		plan.OfferShortcut = sys.GOOS == "windows" || (sys.GOOS == "linux" && sys.UsingNautilus())
+		plan.OfferShortcut = sys.GOOS == "windows" || (sys.GOOS == "linux" && sys.CanAddShortcut())
 	}
 
 	switch {
