@@ -38,7 +38,6 @@ function App() {
   const [addShortcut, setAddShortcut] = useState(false);
   const [shortcutError, setShortcutError] = useState("");
   const [finishAddingShortcut, setFinishAddingShortcut] = useState(false);
-  const [startupError, setStartupError] = useState("");
 
   useEffect(() => {
     const runAnalysis = async () => {
@@ -59,41 +58,40 @@ function App() {
         if (startupErr) {
           setError(startupErr);
           setStatusMessage("Error");
-          return;
+        } else {
+          setStatusMessage("Getting file info...");
+          const info = await GetFileInfo();
+          setFileInfo(info);
+
+          setStatusMessage("Uploading file...");
+          const scanResult = await StartFileScan();
+          if (!scanResult.Success) {
+            throw new Error(`Scan failed: ${scanResult.Message}`);
+          }
+
+          setStatusMessage("Waiting for Analysis to Complete...");
+          const statusResult = await CheckAnalysisStatus();
+          if (!statusResult.Success) {
+            throw new Error(
+              `Analysis status check failed: ${statusResult.Message}`,
+            );
+          }
+
+          setStatusMessage("Fetching results...");
+          const confirmed = await ConfirmAnalysisSuccess();
+          if (!confirmed) {
+            throw new Error("Failed to get analysis results.");
+          }
+
+          setStatusMessage("Fetching results...");
+          const analysisResult = await GetAnalysisResults();
+          if (!analysisResult.Success) {
+            throw new Error("Failed to get analysis results.");
+          }
+
+          setStats(analysisResult.Stats);
+          setStatusMessage("Analysis Complete!");
         }
-
-        setStatusMessage("Getting file info...");
-        const info = await GetFileInfo();
-        setFileInfo(info);
-
-        setStatusMessage("Uploading file...");
-        const scanResult = await StartFileScan();
-        if (!scanResult.Success) {
-          throw new Error(`Scan failed: ${scanResult.Message}`);
-        }
-
-        setStatusMessage("Waiting for Analysis to Complete...");
-        const statusResult = await CheckAnalysisStatus();
-        if (!statusResult.Success) {
-          throw new Error(
-            `Analysis status check failed: ${statusResult.Message}`,
-          );
-        }
-
-        setStatusMessage("Fetching results...");
-        const confirmed = await ConfirmAnalysisSuccess();
-        if (!confirmed) {
-          throw new Error("Failed to get analysis results.");
-        }
-
-        setStatusMessage("Fetching results...");
-        const analysisResult = await GetAnalysisResults();
-        if (!analysisResult.Success) {
-          throw new Error("Failed to get analysis results.");
-        }
-
-        setStats(analysisResult.Stats);
-        setStatusMessage("Analysis Complete!");
       } catch (err: any) {
         setError(err.message || "An unknown error occurred.");
         setStatusMessage("Error");

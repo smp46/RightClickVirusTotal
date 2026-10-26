@@ -103,19 +103,41 @@ func (a *App) start() {
 		file_path = os.Args[2]
 
 	} else {
-		if len(os.Args) < 3 {
-			startUpError = "Missing arguments. Please provide VT_API_Key and file_path."
-			return
-		}
-		VT_API_Key = os.Args[1]
-		file_path = os.Args[2]
-
 		if runtime.GOOS == "linux" && UsingNautilus() {
 			offerShortcut = true
 		}
 		if runtime.GOOS == "windows" {
 			offerShortcut = true
 		}
+
+		if len(os.Args) >= 2 {
+			var newArgs []string
+			for _, arg := range os.Args {
+				trimmed := strings.TrimSpace(arg)
+				if len(trimmed) == 64 {
+					VT_API_Key = trimmed
+				} else {
+					newArgs = append(newArgs, arg)
+				}
+			}
+			os.Args = newArgs
+
+			if VT_API_Key == "" {
+				startUpError = "Missing API key."
+				return
+			}
+
+			if len(os.Args) == 2 {
+				file_path = os.Args[1]
+			} else {
+				startUpError = "No file path provided."
+				return
+			}
+		} else {
+			startUpError = "No arguments provided. Please provide the API key and file path."
+			return
+		}
+
 	}
 
 	file_name = filepath.Base(file_path)
