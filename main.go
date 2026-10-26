@@ -16,6 +16,9 @@ import (
 var assets embed.FS
 
 func main() {
+	// Checked first: on Windows this attaches the console that errors print to.
+	console := hasConsole()
+
 	opts, err := cmdline.Parse(os.Args[1:])
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
@@ -23,7 +26,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	if !opts.UseGUI(hasConsole()) {
+	if !opts.UseGUI(console) {
 		os.Exit(cli.Run(opts, os.Stdin, os.Stdout))
 	}
 
