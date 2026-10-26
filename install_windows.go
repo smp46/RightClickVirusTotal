@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"syscall"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -14,7 +13,9 @@ import (
 
 func (a *App) AddRightClickShortcut(apiKey string) error {
 	if !checkAdmin() {
-		becomeAdmin()
+		if err := becomeAdmin(elevationArgs(apiKey, file_path)); err != nil {
+			return fmt.Errorf("failed to restart as administrator: %w", err)
+		}
 		runtime.Quit(a.ctx)
 		return nil
 	}
@@ -32,11 +33,10 @@ func (a *App) ShortcutExists() bool {
 		`*\shell\Upload to VirusTotal`,
 		registry.READ|registry.WOW64_64KEY,
 	)
-	defer key.Close()
-
 	if err != nil {
 		return false
 	}
+	key.Close()
 	return true
 }
 
@@ -66,8 +66,7 @@ func addRegKeys(executablePath, apiKey string) error {
 	defer commandKey.Close()
 
 	// Set the default value for the command key.
-	command := fmt.Sprintf(`%s "%s" "%%1"`, executablePath, apiKey)
-	err = commandKey.SetStringValue("", command)
+	err = commandKey.SetStringValue("", contextMenuCommand(executablePath, apiKey))
 	if err != nil {
 		return fmt.Errorf("failed to set command value: %w", err)
 	}
@@ -76,39 +75,28 @@ func addRegKeys(executablePath, apiKey string) error {
 }
 
 func checkAdmin() bool {
-	_, err := os.Open("\\\\.\\PHYSICALDRIVE0")
-
-	return err == nil
+	f, err := os.Open("\\\\.\\PHYSICALDRIVE0")
+	if err != nil {
+		return false
+	}
+	f.Close()
+	return true
 }
 
-func becomeAdmin() {
-	verb := "runas"
-	exe, _ := os.Executable()
-	cwd, _ := os.Getwd()
-	var processedArgs []string
-	for _, arg := range os.Args[1:] {
-		if strings.Contains(arg, " ") {
-			processedArgs = append(processedArgs, fmt.Sprintf("\"%s\"", arg))
-		} else {
-			processedArgs = append(processedArgs, arg)
-		}
+// becomeAdmin relaunches this executable elevated with the given command line.
+func becomeAdmin(args string) error {
+	exe, err := os.Executable()
+	if err != nil {
+		return err
 	}
-	processedArgs = append([]string{"gui"}, processedArgs...)
-	processedArgs = append(processedArgs, "shortcut")
-	args := strings.Join(processedArgs, " ")
+	cwd, _ := os.Getwd()
 
-	verbPtr, _ := syscall.UTF16PtrFromString(verb)
+	verbPtr, _ := syscall.UTF16PtrFromString("runas")
 	exePtr, _ := syscall.UTF16PtrFromString(exe)
 	cwdPtr, _ := syscall.UTF16PtrFromString(cwd)
 	argPtr, _ := syscall.UTF16PtrFromString(args)
 
-	var showCmd int32 = 1
-
-	err := windows.ShellExecute(0, verbPtr, exePtr, argPtr, cwdPtr, showCmd)
-	if err != nil {
-		// Failed to become admin
-		return
-	}
+	return windows.ShellExecute(0, verbPtr, exePtr, argPtr, cwdPtr, windows.SW_NORMAL)
 }
 
 func getExecutablePath() string {
