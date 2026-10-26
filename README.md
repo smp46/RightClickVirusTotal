@@ -27,7 +27,7 @@
 
 ## About The Project
 
-RightClickVirusTotal is a cross-platform tool that provides a simple local interface for the VirusTotal API. It's designed to be added to the context menu in Windows and Linux (with Nautilus), allowing you to easily check any file for viruses before running it. A command-line interface (CLI) is also available for all platforms.
+RightClickVirusTotal is a cross-platform tool that provides a simple local interface for the VirusTotal API. It's designed to be added to the context menu in Windows and Linux (Nautilus, Dolphin, Nemo or Caja), allowing you to easily check any file for viruses before running it. A command-line interface (CLI) is also available for all platforms.
 
 ### Built With
 
@@ -88,7 +88,7 @@ The API key and file path can be given in either order.
 ![output](https://github.com/user-attachments/assets/61296c06-a996-4c2f-bb82-cdb03f18e6c7)
 
 
-The GUI also offers to add a "Right Click" context menu shortcut on Windows and Linux (Nautilus) for easier use.
+The GUI also offers to add a "Right Click" context menu shortcut on Windows and Linux for easier use. On Linux it adds the entry to every supported file manager that is installed: Nautilus, Dolphin, Nemo and Caja.
 Launching with just your API key (`gui <Your_VirusTotal_API_Key>`) opens the GUI so you can add the shortcut without scanning anything.
 
 **CLI:**
@@ -123,7 +123,7 @@ Without `gui` or `--cli`, the GUI opens when there is no terminal to print to, s
 
 -   [x] Cross-platform GUI and CLI
 -   [ ] Ability to install GUI without arguments
--   [ ] Expanded Linux Desktop Environment Support
+-   [x] Expanded Linux file manager support (Dolphin, Nemo, Caja)
 -   [ ] macOS support
     
 
