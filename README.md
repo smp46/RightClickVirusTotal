@@ -65,7 +65,7 @@ You'll need to have Go, Node.js, and the Wails CLI installed.
 2.  Build the application
     
     ```
-    cd RightClickVirusTotal && ./build-release.sh
+    cd RightClickVirusTotal && ./build.sh
     ```
    
   You can then find the builds in the `./builds` folder.
@@ -75,6 +75,7 @@ You'll need to have Go, Node.js, and the Wails CLI installed.
 
 Get a free API Key at [virustotal.com](https://www.virustotal.com).
 After building or downloading, you can run the application from your terminal.
+The API key and file path can be given in either order.
 
 **GUI:**
 
@@ -85,10 +86,11 @@ After building or downloading, you can run the application from your terminal.
 
 
 The GUI also offers to add a "Right Click" context menu shortcut on Windows and Linux (Nautilus) for easier use.
+Launching with just your API key (`gui <Your_VirusTotal_API_Key>`) opens the GUI so you can add the shortcut without scanning anything.
 
 **CLI:**
 
-The CLI executable can be run directly (the name may vary based on your OS).
+The same executable runs the CLI when started from a terminal (the name may vary based on your OS).
 
 ```
 ./RCVT_Linux_amd64 <Your_VirusTotal_API_Key> <path_to_file>
@@ -96,6 +98,23 @@ The CLI executable can be run directly (the name may vary based on your OS).
 
 ![output](https://github.com/user-attachments/assets/744717cd-782c-4261-9972-69deaf6d982b)
 
+To avoid typing your key every time, `install` adds an `rcvt` command to your shell (bash, zsh, fish or PowerShell) with the key built in:
+
+```
+./RCVT_Linux_amd64 install
+rcvt <path_to_file>
+```
+
+| Option | Description |
+| --- | --- |
+| `gui`, `--gui` | Open the graphical interface |
+| `--cli` | Use the terminal interface even when there is no console, e.g. in scripts |
+| `install`, `--install` | Add the `rcvt` shell command |
+| `-v`, `--version` | Print the version |
+| `-h`, `--help` | Show usage |
+| `--` | Treat everything after it as a file path, e.g. `rcvt -- -weird-name.exe` |
+
+Without `gui` or `--cli`, the GUI opens when there is no terminal to print to, such as a double click in a file manager or Explorer.
 
 ## Roadmap
 
