@@ -89,9 +89,6 @@ func Interface(stage string, file_name string, loading_dots int, stats *Stats) {
 		fmt.Fprintf(out, "%sMalicious: %d%s\n", Red, stats.Malicious, Reset)
 		fmt.Fprintf(out, "%sSuspicious: %d%s\n", Yellow, stats.Suspicious, Reset)
 		fmt.Fprintf(out, "%s%sUndetected: %d%s\n", White, Dim, stats.Undetected, Reset)
-	case "error":
-		fmt.Fprintf(out, "%s[!] Error: %s%s\n", Red, file_name, Reset)
-		os.Exit(1)
 	}
 }
 
