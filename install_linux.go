@@ -2,55 +2,39 @@ package main
 
 import (
 	"errors"
-	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 )
 
-func (a *App) AddRightClickShortcut(apiKey string) {
-	homeDir, err := os.UserHomeDir()
+func (a *App) AddRightClickShortcut(apiKey string) error {
+	home, err := os.UserHomeDir()
 	if err != nil {
-		log.Fatalf("FATAL: Could not get user home directory: %v", err)
+		return err
 	}
-	nautilusScriptsDir := filepath.Join(homeDir, ".local", "share", "nautilus", "scripts")
-	if err := os.MkdirAll(nautilusScriptsDir, 0755); err != nil {
-		log.Fatalf("FATAL: Could not create Nautilus scripts directory at %s: %v", nautilusScriptsDir, err)
-	}
-	executablePath, err := os.Executable()
+	exe, err := os.Executable()
 	if err != nil {
-		log.Fatalf("FATAL: Could not determine the path of this executable: %v", err)
+		return err
 	}
-	scriptContent := fmt.Sprintf(`#!/bin/bash
-		"%s" gui "%s" shortcut
-		`, executablePath, apiKey)
-	scriptFilePath := filepath.Join(nautilusScriptsDir, "Scan with VirusTotal")
-	err = os.WriteFile(scriptFilePath, []byte(scriptContent), 0755)
-	if err != nil {
-		log.Fatalf("FATAL: Failed to write script file to %s: %v", scriptFilePath, err)
+	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
+		exe = resolved
 	}
+
+	fms := detectFileManagers(exec.LookPath)
+	if len(fms) == 0 {
+		return errors.New("no supported file manager found (Nautilus, Caja, Nemo or Dolphin)")
+	}
+	return installMenus(fms, home, exe, apiKey)
 }
 
 func (a *App) ShortcutExists() bool {
-	homeDir, _ := os.UserHomeDir()
-	nautilusScriptsDir := filepath.Join(homeDir, ".local", "share", "nautilus", "scripts")
-	scriptFilePath := filepath.Join(nautilusScriptsDir, "Scan with VirusTotal")
-
-	if _, err := os.Stat(scriptFilePath); errors.Is(err, os.ErrNotExist) {
-		return false
-	}
-	return true
-}
-
-func UsingNautilus() bool {
-	cmd := exec.Command("xdg-mime", "query", "default", "inode/directory")
-
-	output, err := cmd.Output()
-	result := strings.TrimSpace(string(output))
+	home, err := os.UserHomeDir()
 	if err != nil {
 		return false
 	}
-	return result == "org.gnome.Nautilus.desktop"
+	return menusInstalled(detectFileManagers(exec.LookPath), home)
+}
+
+func canAddShortcut() bool {
+	return len(detectFileManagers(exec.LookPath)) > 0
 }

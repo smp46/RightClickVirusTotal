@@ -11,11 +11,11 @@ import (
 
 var testKey = strings.Repeat("ab12", 16)
 
-func fakeSys(goos string, nautilus bool, env map[string]string) startupSys {
+func fakeSys(goos string, canAddShortcut bool, env map[string]string) startupSys {
 	return startupSys{
-		GOOS:          goos,
-		UsingNautilus: func() bool { return nautilus },
-		Getenv:        func(k string) string { return env[k] },
+		GOOS:           goos,
+		CanAddShortcut: func() bool { return canAddShortcut },
+		Getenv:         func(k string) string { return env[k] },
 	}
 }
 
@@ -37,7 +37,7 @@ func TestPlanStartup(t *testing.T) {
 	}{
 		{"linux scan", cmdline.Options{APIKey: testKey, FilePath: file}, fakeSys("linux", false, nil),
 			startupPlan{APIKey: testKey, FilePath: file}},
-		{"linux nautilus offers shortcut", cmdline.Options{APIKey: testKey, FilePath: file}, fakeSys("linux", true, nil),
+		{"linux with a supported file manager offers shortcut", cmdline.Options{APIKey: testKey, FilePath: file}, fakeSys("linux", true, nil),
 			startupPlan{APIKey: testKey, FilePath: file, OfferShortcut: true}},
 		{"windows offers shortcut", cmdline.Options{APIKey: testKey, FilePath: file}, fakeSys("windows", false, nil),
 			startupPlan{APIKey: testKey, FilePath: file, OfferShortcut: true}},
@@ -54,7 +54,7 @@ func TestPlanStartup(t *testing.T) {
 
 		{"nautilus shortcut takes first selected file", cmdline.Options{APIKey: testKey, Shortcut: true}, fakeSys("linux", true, nautilusEnv),
 			startupPlan{APIKey: testKey, FilePath: file}},
-		{"nautilus shortcut works when default file manager detection fails", cmdline.Options{APIKey: testKey, Shortcut: true}, fakeSys("linux", false, nautilusEnv),
+		{"nautilus shortcut works without file manager detection", cmdline.Options{APIKey: testKey, Shortcut: true}, fakeSys("linux", false, nautilusEnv),
 			startupPlan{APIKey: testKey, FilePath: file}},
 		{"nautilus shortcut without selection", cmdline.Options{APIKey: testKey, Shortcut: true}, fakeSys("linux", true, nil),
 			startupPlan{APIKey: testKey, Error: "Shortcut error: No file was selected in Nautilus."}},
