@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"time"
 
@@ -155,90 +154,6 @@ func scan_file(client *vt.Client, file_path string) {
 	}
 
 	Interface("analysed", file_name, 0, nil)
-}
-
-func createAlias() {
-	VirusTotalAPIKey := " "
-	for len(VirusTotalAPIKey) != 64 {
-		fmt.Fprint(out, "Please enter your VirusTotal API Key: ")
-		fmt.Scanln(&VirusTotalAPIKey)
-	}
-
-	shell := ""
-	home := os.Getenv("HOME")
-	if runtime.GOOS == "windows" {
-		shell = os.Getenv("powershell")
-	} else {
-		shell = os.Getenv("SHELL")
-	}
-
-	rcvt_path, err := os.Executable()
-	if err != nil {
-		Interface("error", err.Error(), 0, nil)
-	}
-
-	rc_path := ""
-	alias := ""
-
-	switch {
-	case strings.Contains(shell, "bash"):
-		rc_path = home + "/.bashrc"
-		alias = "alias rcvt=\"" + rcvt_path + " " + VirusTotalAPIKey + "\""
-		_, err = os.Stat(home + "/.config/bashrc/10-aliases")
-		if err == nil {
-			rc_path = home + "/.config/bashrc/10-aliases"
-		}
-	case strings.Contains(shell, "zsh"):
-		rc_path = home + "/.zshrc"
-		alias = "alias rcvt=\"" + rcvt_path + " " + VirusTotalAPIKey + "\""
-		_, err := os.Stat(home + "/.config/zshrc/25-aliases")
-		if err == nil {
-			rc_path = home + "/.config/zshrc/25-aliases"
-		}
-	case strings.Contains(strings.ToLower(shell), "powershell"):
-		rc_path = home + "\\Documents\\profile.ps1"
-		alias = "New-Alias rcvt \"" + rcvt_path + " " + VirusTotalAPIKey + "\""
-	default:
-		fmt.Fprintln(out, "Couldn't detect the current shell.\nCannot create an alias. Bye bye.")
-		os.Exit(1)
-	}
-
-	var confirm string
-	fmt.Fprintln(out, "Appending alias to: "+rc_path)
-	fmt.Fprint(out, "Procced? (Yy/Nn): ")
-	fmt.Scanln(&confirm)
-	if strings.ToLower(confirm) == "y" {
-		f, err := os.OpenFile(rc_path,
-			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			Interface("error", err.Error(), 0, nil)
-		}
-		defer f.Close()
-		if _, err := f.WriteString(alias); err != nil {
-			Interface("error", err.Error(), 0, nil)
-		}
-		fmt.Fprintln(out, "\nAlias added successfully!\nRestart your shell, or run `source "+rc_path+"` to use rcvt")
-	} else {
-		fmt.Fprintln(out, "You've chosen to not append an alias.\nHere's the alias if you want to add it manually:")
-		fmt.Fprintln(out, alias)
-
-	}
-
-	os.Exit(0)
-}
-
-func install(opts cmdline.Options, in io.Reader) int {
-	fmt.Fprintln(out, "\nWould you like to create an alias with your API key?")
-	fmt.Fprintln(out, "This will allow you to just type `rcvt <File>` in the future.")
-	fmt.Fprint(out, "(Yy/Nn): ")
-	var confirm string
-	fmt.Fscanln(in, &confirm)
-	if strings.ToLower(confirm) != "y" {
-		fmt.Fprintln(out, "You've chosen to not create an alias, bye bye.")
-		return 0
-	}
-	createAlias()
-	return 0
 }
 
 func displayHelp() {
