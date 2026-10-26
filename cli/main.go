@@ -5,12 +5,15 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
+
+	"rcvt/internal/cmdline"
 
 	vt "github.com/VirusTotal/vt-go"
 	"golang.org/x/term"
@@ -38,6 +41,9 @@ type Stats struct {
 
 const VERSION string = "v2.0.4"
 
+// out is where all CLI output is written, set by Run.
+var out io.Writer = os.Stdout
+
 func Interface(stage string, file_name string, loading_dots int, stats *Stats) {
 	switch stage {
 	case "title":
@@ -49,41 +55,41 @@ func Interface(stage string, file_name string, loading_dots int, stats *Stats) {
 		// Check if terminal has enough space
 		if err == nil && width >= required_width && height >= required_height {
 			// Terminal has enough space, print the title
-			fmt.Println("  ___ _      _   _    ___ _ _    _  __   ___             _____    _        _ ")
-			fmt.Println(" | _ (_)__ _| |_| |_ / __| (_)__| |_\\ \\ / (_)_ _ _  _ __|_   ____| |_ __ _| |")
-			fmt.Println(" |   | / _` | ' |  _| (__| | / _| / /\\ V /| | '_| || (_-< | |/ _ |  _/ _` | |")
-			fmt.Println(" |_|_|_\\__, |_||_\\__|\\___|_|_\\__|_\\_\\ \\_/ |_|_|  \\_,_/__/ |_|\\___/\\__\\__,_|_|")
-			fmt.Println("       |___/                                                                 ")
-			fmt.Println("                                                                      " + VERSION)
+			fmt.Fprintln(out, "  ___ _      _   _    ___ _ _    _  __   ___             _____    _        _ ")
+			fmt.Fprintln(out, " | _ (_)__ _| |_| |_ / __| (_)__| |_\\ \\ / (_)_ _ _  _ __|_   ____| |_ __ _| |")
+			fmt.Fprintln(out, " |   | / _` | ' |  _| (__| | / _| / /\\ V /| | '_| || (_-< | |/ _ |  _/ _` | |")
+			fmt.Fprintln(out, " |_|_|_\\__, |_||_\\__|\\___|_|_\\__|_\\_\\ \\_/ |_|_|  \\_,_/__/ |_|\\___/\\__\\__,_|_|")
+			fmt.Fprintln(out, "       |___/                                                                 ")
+			fmt.Fprintln(out, "                                                                      "+VERSION)
 		} else {
 			// Not enough space, print small title and version
-			fmt.Println("\nRightClickVirusTotal")
-			fmt.Println(VERSION)
+			fmt.Fprintln(out, "\nRightClickVirusTotal")
+			fmt.Fprintln(out, VERSION)
 		}
 	case "uploading":
-		fmt.Printf("\nChecking File: %s\n", file_name)
-		fmt.Printf("%s[ ] File Uploading...%s\n", Green, Reset)
+		fmt.Fprintf(out, "\nChecking File: %s\n", file_name)
+		fmt.Fprintf(out, "%s[ ] File Uploading...%s\n", Green, Reset)
 
 	case "uploaded":
-		fmt.Printf("%s%s%s\n", CursorUp, strings.Repeat(" ", 30), CursorUp)
-		fmt.Printf("[✓] File Uploaded\n\n")
+		fmt.Fprintf(out, "%s%s%s\n", CursorUp, strings.Repeat(" ", 30), CursorUp)
+		fmt.Fprintf(out, "[✓] File Uploaded\n\n")
 
 	case "analysing":
-		fmt.Printf("%s%s%s\n", CursorUp, strings.Repeat(" ", 30), CursorUp)
-		fmt.Printf("[ ] File Analysing%s\n", strings.Repeat(".", loading_dots))
+		fmt.Fprintf(out, "%s%s%s\n", CursorUp, strings.Repeat(" ", 30), CursorUp)
+		fmt.Fprintf(out, "[ ] File Analysing%s\n", strings.Repeat(".", loading_dots))
 
 	case "analysed":
-		fmt.Printf("%s%s%s\n", CursorUp, strings.Repeat(" ", 30), CursorUp)
-		fmt.Printf("[✓] Analysis Complete\n\n")
+		fmt.Fprintf(out, "%s%s%s\n", CursorUp, strings.Repeat(" ", 30), CursorUp)
+		fmt.Fprintf(out, "[✓] Analysis Complete\n\n")
 
 	case "results":
-		fmt.Printf("%sFile: %s%s\n", Blue, file_name, Reset)
-		fmt.Printf("%sHarmless: %d%s\n", Green, stats.Harmless, Reset)
-		fmt.Printf("%sMalicious: %d%s\n", Red, stats.Malicious, Reset)
-		fmt.Printf("%sSuspicious: %d%s\n", Yellow, stats.Suspicious, Reset)
-		fmt.Printf("%s%sUndetected: %d%s\n", White, Dim, stats.Undetected, Reset)
+		fmt.Fprintf(out, "%sFile: %s%s\n", Blue, file_name, Reset)
+		fmt.Fprintf(out, "%sHarmless: %d%s\n", Green, stats.Harmless, Reset)
+		fmt.Fprintf(out, "%sMalicious: %d%s\n", Red, stats.Malicious, Reset)
+		fmt.Fprintf(out, "%sSuspicious: %d%s\n", Yellow, stats.Suspicious, Reset)
+		fmt.Fprintf(out, "%s%sUndetected: %d%s\n", White, Dim, stats.Undetected, Reset)
 	case "error":
-		fmt.Printf("%s[!] Error: %s%s\n", Red, file_name, Reset)
+		fmt.Fprintf(out, "%s[!] Error: %s%s\n", Red, file_name, Reset)
 		os.Exit(1)
 	}
 }
@@ -154,7 +160,7 @@ func scan_file(client *vt.Client, file_path string) {
 func createAlias() {
 	VirusTotalAPIKey := " "
 	for len(VirusTotalAPIKey) != 64 {
-		fmt.Print("Please enter your VirusTotal API Key: ")
+		fmt.Fprint(out, "Please enter your VirusTotal API Key: ")
 		fmt.Scanln(&VirusTotalAPIKey)
 	}
 
@@ -193,13 +199,13 @@ func createAlias() {
 		rc_path = home + "\\Documents\\profile.ps1"
 		alias = "New-Alias rcvt \"" + rcvt_path + " " + VirusTotalAPIKey + "\""
 	default:
-		fmt.Println("Couldn't detect the current shell.\nCannot create an alias. Bye bye.")
+		fmt.Fprintln(out, "Couldn't detect the current shell.\nCannot create an alias. Bye bye.")
 		os.Exit(1)
 	}
 
 	var confirm string
-	fmt.Println("Appending alias to: " + rc_path)
-	fmt.Print("Procced? (Yy/Nn): ")
+	fmt.Fprintln(out, "Appending alias to: "+rc_path)
+	fmt.Fprint(out, "Procced? (Yy/Nn): ")
 	fmt.Scanln(&confirm)
 	if strings.ToLower(confirm) == "y" {
 		f, err := os.OpenFile(rc_path,
@@ -211,55 +217,98 @@ func createAlias() {
 		if _, err := f.WriteString(alias); err != nil {
 			Interface("error", err.Error(), 0, nil)
 		}
-		fmt.Println("\nAlias added successfully!\nRestart your shell, or run `source " + rc_path + "` to use rcvt")
+		fmt.Fprintln(out, "\nAlias added successfully!\nRestart your shell, or run `source "+rc_path+"` to use rcvt")
 	} else {
-		fmt.Println("You've chosen to not append an alias.\nHere's the alias if you want to add it manually:")
-		fmt.Println(alias)
+		fmt.Fprintln(out, "You've chosen to not append an alias.\nHere's the alias if you want to add it manually:")
+		fmt.Fprintln(out, alias)
 
 	}
 
 	os.Exit(0)
 }
 
+func install(opts cmdline.Options, in io.Reader) int {
+	fmt.Fprintln(out, "\nWould you like to create an alias with your API key?")
+	fmt.Fprintln(out, "This will allow you to just type `rcvt <File>` in the future.")
+	fmt.Fprint(out, "(Yy/Nn): ")
+	var confirm string
+	fmt.Fscanln(in, &confirm)
+	if strings.ToLower(confirm) != "y" {
+		fmt.Fprintln(out, "You've chosen to not create an alias, bye bye.")
+		return 0
+	}
+	createAlias()
+	return 0
+}
+
 func displayHelp() {
 	Interface("title", "", 0, nil)
 
-	fmt.Println("\nUsage:")
-	fmt.Printf("  %s <VirusTotalAPIKey> <FilePath>%s\n", Green, Reset)
-	fmt.Println("\nArguments:")
-	fmt.Printf("  %s<VirusTotalAPIKey>%s  VirusTotal API key\n", Blue, Reset)
-	fmt.Printf("  %s<FilePath>%s          Path to the file you want to scan\n\n", Blue, Reset)
-	fmt.Println("Options:")
-	fmt.Printf("  %s--install%s           Create an alias with your API key for easier usage\n", Blue, Reset)
-	fmt.Println("\nExample:")
-	fmt.Printf("  %s%s YOUR_API_KEY file.exe%s\n", Dim, os.Args[0], Reset)
+	prog := filepath.Base(os.Args[0])
+	fmt.Fprintln(out, "\nUsage:")
+	fmt.Fprintf(out, "  %s%s [options] <VirusTotalAPIKey> <FilePath>%s\n", Green, prog, Reset)
+	fmt.Fprintf(out, "  %s%s install%s\n", Green, prog, Reset)
+	fmt.Fprintln(out, "\nArguments:")
+	fmt.Fprintf(out, "  %s<VirusTotalAPIKey>%s  VirusTotal API key\n", Blue, Reset)
+	fmt.Fprintf(out, "  %s<FilePath>%s          Path to the file you want to scan\n\n", Blue, Reset)
+	fmt.Fprintln(out, "Options:")
+	fmt.Fprintf(out, "  %sgui, --gui%s          Open the graphical interface\n", Blue, Reset)
+	fmt.Fprintf(out, "  %s--cli%s               Use the terminal interface even without a console\n", Blue, Reset)
+	fmt.Fprintf(out, "  %sinstall, --install%s  Create a shell alias with your API key for easier usage\n", Blue, Reset)
+	fmt.Fprintf(out, "  %s-v, --version%s       Print the version\n", Blue, Reset)
+	fmt.Fprintf(out, "  %s-h, --help%s          Show this help\n", Blue, Reset)
+	fmt.Fprintf(out, "  %s--%s                  Treat everything after as a file path\n", Blue, Reset)
+	fmt.Fprintln(out, "\nExample:")
+	fmt.Fprintf(out, "  %s%s YOUR_API_KEY file.exe%s\n", Dim, prog, Reset)
 }
 
-func Run() {
-	if len(os.Args) == 2 && os.Args[1] == "--install" {
-		fmt.Println("\nWould you like to create an alias with your API key?")
-		fmt.Println("This will allow you to just type `rcvt <File>` in the future.")
-		fmt.Print("(Yy/Nn): ")
-		var confirm string
-		fmt.Scanln(&confirm)
-		if strings.ToLower(confirm) == "y" {
-			createAlias()
-		} else {
-			fmt.Println("You've chosen to not create an alias, bye bye.")
-			os.Exit(0)
-		}
-		createAlias()
-		os.Exit(0)
-	}
+// Run executes the CLI for already parsed options and returns the exit code.
+func Run(opts cmdline.Options, in io.Reader, w io.Writer) int {
+	out = w
 
-	if len(os.Args) != 3 {
+	switch opts.Action {
+	case cmdline.ActionHelp:
 		displayHelp()
-		return
+		return 0
+	case cmdline.ActionVersion:
+		fmt.Fprintln(out, VERSION)
+		return 0
+	case cmdline.ActionInstall:
+		return install(opts, in)
 	}
 
-	VirusTotalAPIKey := os.Args[1]
-	file_path := os.Args[2]
+	if opts.APIKey == "" && opts.FilePath == "" {
+		displayHelp()
+		return 0
+	}
+	if err := validateScan(opts); err != nil {
+		fmt.Fprintf(out, "%s[!] Error: %s%s\n", Red, err, Reset)
+		fmt.Fprintf(out, "Run '%s --help' for usage.\n", filepath.Base(os.Args[0]))
+		return 2
+	}
 
+	scan(opts.APIKey, opts.FilePath)
+	return 0
+}
+
+func validateScan(opts cmdline.Options) error {
+	if opts.APIKey == "" {
+		return fmt.Errorf("missing VirusTotal API key")
+	}
+	if opts.FilePath == "" {
+		return fmt.Errorf("missing file path")
+	}
+	info, err := os.Stat(opts.FilePath)
+	if err != nil {
+		return err
+	}
+	if info.IsDir() {
+		return fmt.Errorf("%s is a directory, not a file", opts.FilePath)
+	}
+	return nil
+}
+
+func scan(VirusTotalAPIKey, file_path string) {
 	file_name := filepath.Base(file_path)
 
 	Interface("title", "", 0, nil)
